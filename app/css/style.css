@@ -178,3 +178,10 @@ input.textfield:focus { outline: none; border-color: var(--primary); }
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px;
 }
 
+/* Afdrukweergave: resultatenrapport van een sessie (pdf via de browser). */
+#printsheet { display: none; }
+@media print {
+  body > *:not(#printsheet) { display: none !important; }
+  #printsheet { display: block; color: #000; }
+}
+

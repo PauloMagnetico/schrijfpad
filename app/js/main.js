@@ -1021,6 +1021,11 @@ function screenTeacher() {
     if (!l) return;
     l.step = msg.step;
     if (msg.stars) l.stars = Math.max(l.stars || 0, msg.stars);
+    // Per letter het beste resultaat bewaren, voor het pdf-rapport.
+    if (msg.letter && msg.stars) {
+      l.results = l.results || {};
+      l.results[msg.letter] = Math.max(l.results[msg.letter] || 0, msg.stars);
+    }
     renderRows();
   });
   ses.on('disconnected', () => setStatus(false, 'Verbinding kwijt…'));
@@ -1052,11 +1057,48 @@ function screenTeacher() {
     ov.requestFullscreen?.();
   });
 
+  // Resultatenrapport voor de pdf: per leerling de beste score per letter.
+  function buildReport() {
+    const when = new Date().toLocaleString('nl-BE');
+    const code = state.code ? state.code.replace(/(\d{3})(\d{3})/, '$1 $2') : '';
+    const blocks = [...state.learners.values()].map((l) => {
+      const res = Object.entries(l.results || {});
+      const items = res.length
+        ? res.map(([ltr, st]) => `<span style="display:inline-block; margin:2px 14px 2px 0"><strong style="font-family:'Andika',sans-serif; font-size:18px">${esc(ltr)}</strong> ${'★'.repeat(st)}${'☆'.repeat(3 - st)}</span>`).join('')
+        : '<em>nog geen afgewerkte letters</em>';
+      return `<div style="padding:10px 0; border-bottom:1px solid #bbb; break-inside:avoid">
+        <strong style="font-size:17px">${esc(l.name)}</strong>${l.connected ? '' : ' (weggegaan)'}
+        <div style="margin-top:4px">${items}</div>
+      </div>`;
+    }).join('');
+    return `<h1 style="font-size:24px; margin:0 0 4px">Letterpad — resultaten</h1>
+      <p style="margin:0 0 16px">Sessie ${code} · ${when}</p>
+      ${blocks || '<p>Er was niemand aangesloten.</p>'}`;
+  }
+
   s.querySelector('#stopses').addEventListener('click', () => {
-    if (!confirm('Sessie stoppen? Alle resultaten verdwijnen.')) return;
-    ses.end();
-    ses.close();
-    location.hash = '#start';
+    const ov = h(`<div class="overlay" style="background:rgba(23,32,51,.5); padding:24px; box-sizing:border-box">
+      <div style="background:#fff; border-radius:24px; padding:28px; width:min(420px,100%); box-sizing:border-box; display:flex; flex-direction:column; gap:12px">
+        <h2 style="margin:0; font-size:22px">Sessie stoppen?</h2>
+        <p style="margin:0 0 6px; font-size:16px; color:var(--muted)">De resultaten verdwijnen daarna. Bewaar ze eerst als pdf als je ze wil houden.</p>
+        <button id="pdfbtn" class="btn primary small">Bewaar als pdf</button>
+        <button id="stopnow" class="btn small" style="background:var(--ink); color:#fff">Stoppen zonder bewaren</button>
+        <button id="cancelstop" class="btn ghost small">Terug</button>
+      </div>
+    </div>`);
+    ov.querySelector('#pdfbtn').addEventListener('click', () => {
+      document.getElementById('printsheet').innerHTML = buildReport();
+      window.print();
+      ov.querySelector('#stopnow').textContent = 'Sessie stoppen';
+    });
+    ov.querySelector('#stopnow').addEventListener('click', () => {
+      ov.remove();
+      ses.end();
+      ses.close();
+      location.hash = '#start';
+    });
+    ov.querySelector('#cancelstop').addEventListener('click', () => ov.remove());
+    document.body.appendChild(ov);
   });
   s.querySelector('#leave').addEventListener('click', () => { ses.close(); });
 
