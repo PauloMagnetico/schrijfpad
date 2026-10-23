@@ -279,11 +279,12 @@ const upper = {
 
 export const LETTERS = Object.assign({}, lower, upper);
 
-// Voorbeeldwoord en (waar nuttig) klankzin per kleine letter.
+// Voorbeeldwoord per kleine letter: een kort, alledaags woord dat de letter
+// bevat (niet per se vooraan) — zelfde woord bij meer letters mag.
 export const WORDS = {
-  a: 'appel', b: 'bus', c: 'citroen', d: 'deur', e: 'ezel', f: 'fiets',
-  g: 'geit', h: 'huis', i: 'inkt', j: 'jas', k: 'kat', l: 'lamp',
-  m: 'maan', n: 'neus', o: 'oog', p: 'pen', q: 'quiz', r: 'roos',
+  a: 'tas', b: 'bus', c: 'citroen', d: 'doos', e: 'ezel', f: 'fiets',
+  g: 'geit', h: 'huis', i: 'vis', j: 'jas', k: 'kat', l: 'meel',
+  m: 'maan', n: 'neus', o: 'doos', p: 'pen', q: 'quiz', r: 'roos',
   s: 'sok', t: 'tas', u: 'uil', v: 'vis', w: 'wolk', x: 'xylofoon',
   y: 'yoghurt', z: 'zon', ij: 'ijs',
 };
