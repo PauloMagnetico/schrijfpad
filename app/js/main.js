@@ -569,8 +569,8 @@ function screenTrace() {
     const stars = tracer.stars();
     attempts.push(stars);
     updateChips();
-    const txt = stars === 3 ? 'Super! Drie sterren!' : stars === 2 ? 'Goed zo! Twee sterren.' : 'Gelukt! Eén ster.';
-    setFb('good', txt);
+    const txt = stars === 3 ? 'Heel goed! Drie sterren.' : stars === 2 ? 'Goed, maar het kan netter.' : 'Dat kan beter.';
+    setFb(stars > 1 ? 'good' : 'hint', txt);
     unlockNext();
     const best = Math.max(...attempts);
     report(letter, `Overtrekken · ${letter}`, best);
@@ -591,7 +591,7 @@ function screenTrace() {
       setFb('hint', 'Begin bij het oranje bolletje');
     } else {
       drawing = true;
-      setFb('good', 'Goed begonnen!');
+      setFb('idle', 'Volg de grijze letter');
     }
     updateInk();
   });
@@ -600,7 +600,6 @@ function screenTrace() {
     const r = tracer.move(svgPoint(svg, letterG, ev));
     if (r === 'offPath') setFb('hint', 'Blijf bij de lijn');
     else if (r === 'backwards') setFb('hint', 'Andere kant op');
-    else if (tracer.fractionDone() > 0.15) setFb('good', 'Goed bezig!');
     updateInk();
   });
   svg.addEventListener('pointerup', () => {
@@ -608,7 +607,7 @@ function screenTrace() {
     drawing = false;
     const r = tracer.endStroke();
     if (r === 'done-letter') { updateInk(); finishAttempt(); }
-    else if (r === 'done-stroke') { setFb('good', 'Goed zo!'); updateInk(); }
+    else if (r === 'done-stroke') { setFb('idle', 'Nu het volgende deel'); updateInk(); }
     else { setFb('hint', 'Bijna! Nog eens vanaf het bolletje'); tracer.progress = 0; updateInk(); }
   });
 
@@ -648,7 +647,6 @@ function screenWrite() {
     </div>
     <div class="bottombar">
       <button id="erase" class="iconbtn" style="width:60px; height:60px; border-radius:30px; border:2px solid var(--border)" aria-label="Uitvegen en opnieuw beginnen">${icon('eraser')}</button>
-      <button id="doneBtn" class="btn primary" style="flex-grow:1" disabled>${icon('check', 22, 'currentColor', 2.5)} Klaar</button>
     </div>
   </div>`);
   s.querySelector('#top').replaceWith(lessonTop('#trace', 'Terug naar overtrekken', 3, spacer));
@@ -695,8 +693,6 @@ function screenWrite() {
     }
   }
 
-  const doneBtn = s.querySelector('#doneBtn');
-
   function nextAttempt() {
     rawInk = [];
     tracer = new Tracer(letter, { tolerance: 52, startRadius: 56 });
@@ -706,17 +702,32 @@ function screenWrite() {
   }
 
   function finishAttempt() {
-    attempts.push(1);
-    updateChips();
+    const stars = tracer.stars();
     // Even de grijze vorm over de eigen letter: zo zie je zelf hoe het ging.
     slotG.insertAdjacentHTML('beforeend', `<g class="ghost">${strokePaths(letter, (st) => `stroke="#C7CFDD" stroke-width="${st.dot ? 18 : 26}" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"`)}</g>`);
+    if (stars < 2) {
+      // Strenge lat: een slordige letter telt niet mee.
+      setFb('hint', 'Nog niet goed. Probeer opnieuw.');
+      setTimeout(nextAttempt, 1600);
+      return;
+    }
+    attempts.push(stars);
+    updateChips();
     if (attempts.length >= 3) {
-      setFb('good', 'Alles geschreven. Knap!');
-      doneBtn.disabled = false;
-      setTimeout(() => { const g0 = slotG.querySelector('.ghost'); if (g0) g0.remove(); }, 1400);
+      setFb('good', 'Klaar!');
+      const starsBest = store.traceStars || 1;
+      store.progress[letter] = { stars: starsBest };
+      report(letter, 'Klaar', starsBest);
+      // Automatisch door naar de volgende letter; pas terug naar het
+      // leerpad wanneer alles af is.
+      const next = letterList().find((l) => !store.progress[l]);
+      setTimeout(() => {
+        if (next) { store.currentLetter = next; location.hash = '#watch'; }
+        else { store.currentLetter = null; location.hash = '#home'; }
+      }, 1600);
     } else {
-      setFb('good', 'Goed zo!');
-      setTimeout(nextAttempt, 1400);
+      setFb('good', stars === 3 ? 'Heel goed!' : 'Goed.');
+      setTimeout(nextAttempt, 1600);
     }
   }
 
@@ -762,22 +773,6 @@ function screenWrite() {
   s.querySelector('#erase').addEventListener('click', () => {
     if (attempts.length >= 3) return;
     nextAttempt();
-  });
-
-  doneBtn.addEventListener('click', () => {
-    const stars = store.traceStars || 1;
-    store.progress[letter] = { stars };
-    // Automatisch door naar de volgende letter; pas terug naar het
-    // leerpad wanneer alles af is.
-    const next = letterList().find((l) => !store.progress[l]);
-    report(letter, 'Klaar', stars);
-    if (next) {
-      store.currentLetter = next;
-      location.hash = '#watch';
-    } else {
-      store.currentLetter = null;
-      location.hash = '#home';
-    }
   });
 
   renderSlot();

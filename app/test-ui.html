@@ -81,11 +81,10 @@ async function testWriteScreen(letter) {
   const def = LETTERS[letter];
   for (let round = 0; round < 3; round++) {
     for (const s of def.strokes) await traceStroke(svg, g, s.d);
-    await wait(1600); // wachttijd tot de volgende beurt (ghost-overlay + reset)
+    await wait(1700); // ghost-overlay + automatische overgang
   }
-  const doneBtn = document.querySelector('#doneBtn');
-  const fb = document.querySelector('#fbtitle');
-  log(`WRITE ${letter}: fb="${fb ? fb.textContent : '?'}" klaar-knop=${doneBtn ? (doneBtn.disabled ? 'UIT' : 'AAN') : '?'}`);
+  await wait(200);
+  log(`WRITE ${letter}: klaar=${window.__lp.progress[letter] ? 'JA' : 'NEE'} hash=${location.hash}`);
 }
 
 (async () => {
