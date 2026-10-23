@@ -114,6 +114,13 @@ function guidesMarkup(vbW, lines, slant) {
   return out;
 }
 
+// Zichtbaar venster van het vak: zoom in op de letter zodat die zo groot
+// mogelijk is; CSS (max-height op .drawbox svg) houdt het vak op het scherm.
+function viewBoxFor(vbW, w) {
+  const vis = Math.min(vbW, Math.max(w + 70, 260));
+  return `${((vbW - vis) / 2).toFixed(1)} 0 ${vis} ${BOX_H}`;
+}
+
 // Transform voor een lettergroep: centreren + eventueel schuin (−8°).
 function letterTransform(vbW, w, slant, scale = 1) {
   const ox = (vbW - w * scale) / 2;
@@ -398,8 +405,8 @@ function screenWatch() {
   const s = h(`<div class="screen">
     <div id="top"></div>
     <div class="drawbox">
-      <svg id="canvas" viewBox="0 0 ${vbW} ${BOX_H}" role="img" aria-label="De letter ${letter} tekent zichzelf op de lijnen, vanaf het oranje startpunt">
-        <g id="guides">${guidesMarkup(vbW, store.lines, store.slant)}</g>
+      <svg id="canvas" viewBox="${viewBoxFor(vbW, def.w)}" role="img" aria-label="De letter ${letter} tekent zichzelf op de lijnen, vanaf het oranje startpunt">
+        <g id="guides" transform="translate(-400,0)">${guidesMarkup(vbW + 800, store.lines, store.slant)}</g>
         <g id="letter" transform="${letterTransform(vbW, def.w, store.slant)}">
           ${strokePaths(letter, () => 'stroke="#D5DCE8" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"')}
           <g id="ink"></g>
@@ -487,8 +494,8 @@ function screenTrace() {
   const s = h(`<div class="screen">
     <div id="top"></div>
     <div class="drawbox">
-      <svg id="canvas" viewBox="0 0 ${vbW} ${BOX_H}" aria-label="Overtrekvak voor de letter ${letter}">
-        <g>${guidesMarkup(vbW, store.lines, store.slant)}</g>
+      <svg id="canvas" viewBox="${viewBoxFor(vbW, def.w)}" aria-label="Overtrekvak voor de letter ${letter}">
+        <g transform="translate(-400,0)">${guidesMarkup(vbW + 800, store.lines, store.slant)}</g>
         <g id="letter" transform="${letterTransform(vbW, def.w, store.slant)}">
           ${strokePaths(letter, (st) => `stroke="#D5DCE8" stroke-width="${st.dot ? 18 : 26}" stroke-linecap="round" stroke-linejoin="round"`)}
           <g id="ink"></g>
@@ -644,8 +651,8 @@ function screenWrite() {
   const s = h(`<div class="screen">
     <div id="top"></div>
     <div class="drawbox">
-      <svg id="canvas" viewBox="0 0 ${vbW} ${BOX_H}" aria-label="Schrijfvak: schrijf de letter ${letter} drie keer, één keer per beurt">
-        <g>${guidesMarkup(vbW, store.lines, store.slant)}</g>
+      <svg id="canvas" viewBox="${viewBoxFor(vbW, def.w)}" aria-label="Schrijfvak: schrijf de letter ${letter} drie keer, één keer per beurt">
+        <g transform="translate(-400,0)">${guidesMarkup(vbW + 800, store.lines, store.slant)}</g>
         <g id="slot" transform="${letterTransform(vbW, def.w, store.slant)}"></g>
       </svg>
     </div>

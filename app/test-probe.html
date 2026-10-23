@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="nl">
+<head><meta charset="utf-8"><title>Breedte-probe</title></head>
+<body style="margin:0">
+<iframe id="f" src="/#watch" style="width:390px; height:844px; border:0"></iframe>
+<pre id="out"></pre>
+<script>
+const f = document.getElementById('f');
+f.addEventListener('load', () => {
+  setTimeout(() => {
+    const d = f.contentDocument;
+    const lines = [`doc scrollWidth=${d.documentElement.scrollWidth} clientWidth=${d.documentElement.clientWidth}`];
+    d.querySelectorAll('*').forEach((el) => {
+      const r = el.getBoundingClientRect();
+      if (r.width > 391) {
+        const tag = el.tagName.toLowerCase();
+        const id = el.id ? `#${el.id}` : '';
+        const cls = el.className && typeof el.className === 'string' ? `.${el.className.split(' ')[0]}` : '';
+        lines.push(`${tag}${id}${cls} width=${Math.round(r.width)} left=${Math.round(r.left)}`);
+      }
+    });
+    document.getElementById('out').textContent = lines.slice(0, 25).join('\n');
+    document.title = 'KLAAR';
+  }, 800);
+});
+</script>
+</body>
+</html>

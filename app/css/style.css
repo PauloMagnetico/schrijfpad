@@ -120,7 +120,7 @@ h1, h2, h3, p { margin: 0; }
 .fb-sub { font-size: 15px; color: var(--muted); }
 
 .drawbox { margin: 0 20px; border-radius: 24px; background: var(--card); overflow: hidden; }
-.drawbox svg { display: block; width: 100%; height: auto; touch-action: none; }
+.drawbox svg { display: block; width: 100%; height: auto; max-height: 52vh; max-height: 52dvh; touch-action: none; }
 
 .bottombar { margin-top: auto; padding: 16px 20px 28px; display: flex; gap: 12px; }
 
