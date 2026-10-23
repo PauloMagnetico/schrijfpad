@@ -1,13 +1,14 @@
 /* Letterpad service worker: de app-schil werkt offline.
  * Sessies (WebSocket) hebben uiteraard wel het netwerk nodig.
  */
-const VERSION = 'letterpad-v3';
+const VERSION = 'letterpad-v4';
 const SHELL = [
   '/',
   '/index.html',
   '/css/style.css',
   '/js/main.js',
   '/js/letters.js',
+  '/js/strokes.js',
   '/js/engine.js',
   '/js/net.js',
   '/js/vendor-qrcode.js',

@@ -37,6 +37,11 @@ function wordMarkup(letter) {
   const l = letter.toLowerCase();
   return wordFor(letter).split(l).join(`<b>${l}</b>`);
 }
+// Referentiewoord ("a van tas") boven de oefening, de klank vet gedrukt.
+function refWord(letter) {
+  const w = wordMarkup(letter);
+  return w ? `<div class="letterfont" style="text-align:center; font-size:28px; padding:0 20px 6px">${w}</div>` : '';
+}
 
 /* ---------- kleine hulpjes -------------------------------------------- */
 function h(html) {
@@ -404,6 +409,7 @@ function screenWatch() {
   const hear = h('<span style="width:48px"></span>');
   const s = h(`<div class="screen">
     <div id="top"></div>
+    ${refWord(letter)}
     <div class="drawbox">
       <svg id="canvas" viewBox="${viewBoxFor(vbW, def.w)}" role="img" aria-label="De letter ${letter} tekent zichzelf op de lijnen, vanaf het oranje startpunt">
         <g id="guides" transform="translate(-400,0)">${guidesMarkup(vbW + 800, store.lines, store.slant)}</g>
@@ -493,6 +499,7 @@ function screenTrace() {
   const spacer = h('<span style="width:48px"></span>');
   const s = h(`<div class="screen">
     <div id="top"></div>
+    ${refWord(letter)}
     <div class="drawbox">
       <svg id="canvas" viewBox="${viewBoxFor(vbW, def.w)}" aria-label="Overtrekvak voor de letter ${letter}">
         <g transform="translate(-400,0)">${guidesMarkup(vbW + 800, store.lines, store.slant)}</g>
@@ -649,6 +656,7 @@ function screenWrite() {
   const spacer = h('<span style="width:48px"></span>');
   const s = h(`<div class="screen">
     <div id="top"></div>
+    ${refWord(letter)}
     <div class="drawbox">
       <svg id="canvas" viewBox="${viewBoxFor(vbW, def.w)}" aria-label="Schrijfvak: schrijf de letter ${letter} drie keer, één keer per beurt">
         <g transform="translate(-400,0)">${guidesMarkup(vbW + 800, store.lines, store.slant)}</g>
@@ -856,6 +864,7 @@ function screenTeacher() {
           <div style="display:flex; flex-wrap:wrap; gap:8px">
             <button class="chip" data-preset="vowels">Klinkers</button>
             <button class="chip" data-preset="consonants">Medeklinkers</button>
+            <button class="chip" data-preset="klanken">Klanken</button>
             <button class="chip" data-preset="all">Alles</button>
             <button class="chip" data-preset="none">Wissen</button>
           </div>
@@ -899,51 +908,50 @@ function screenTeacher() {
     </div>
   </div>`);
 
-  /* -- lettertoetsen (azerty) -- */
+  /* -- toetsen in de aanleervolgorde van de lesgever, klanken incluis -- */
   const kb = s.querySelector('#kb');
-  const ROWS = ['azertyuiop'.split(''), 'qsdfghjklm'.split(''), ['SHIFT', 'w', 'x', 'c', 'v', 'b', 'n', 'ij']];
-  function cs(c) { return state.upper ? c.toUpperCase() : c; }
+  const KEYS = [...PATH_ORDER, 'SHIFT'];
+  // Hoofdletters bestaan voor losse letters en voor ij (IJ); klanken niet.
+  function cs(c) { return state.upper && (c.length === 1 || c === 'ij') ? c.toUpperCase() : c; }
   function renderKb() {
     kb.innerHTML = '';
-    ROWS.forEach((row) => {
-      const r = document.createElement('div');
-      r.style.cssText = 'display:grid; grid-template-columns:repeat(10, minmax(0,1fr)); gap:6px';
-      row.forEach((c) => {
-        if (c === 'SHIFT') {
-          const b = h(`<button class="letterkey" aria-label="Hoofdletters" aria-pressed="${state.upper}" style="grid-column:span 2; ${state.upper ? 'background:var(--primary); color:#fff' : ''}">${icon('shift', 26)}</button>`);
-          b.addEventListener('click', () => { state.upper = !state.upper; renderKb(); });
-          r.appendChild(b);
-          return;
-        }
-        if (c === 'ij' && state.upper) {
-          r.appendChild(h('<span></span>'));
-          return;
-        }
-        const label = cs(c);
-        const on = state.picked.includes(label);
-        const b = h(`<button class="letterkey" aria-pressed="${on}"><span style="display:inline-block; ${state.slant ? 'transform:skewX(-12deg)' : ''}">${label}</span></button>`);
-        b.addEventListener('click', () => {
-          state.picked = on ? state.picked.filter((x) => x !== label) : [...state.picked, label];
-          renderKb(); updateCount();
-        });
+    const r = document.createElement('div');
+    r.style.cssText = 'display:grid; grid-template-columns:repeat(10, minmax(0,1fr)); gap:6px';
+    KEYS.forEach((c) => {
+      if (c === 'SHIFT') {
+        const b = h(`<button class="letterkey" aria-label="Hoofdletters" aria-pressed="${state.upper}" style="grid-column:span 2; ${state.upper ? 'background:var(--primary); color:#fff' : ''}">${icon('shift', 26)}</button>`);
+        b.addEventListener('click', () => { state.upper = !state.upper; renderKb(); });
         r.appendChild(b);
+        return;
+      }
+      const label = cs(c);
+      const on = state.picked.includes(label);
+      const b = h(`<button class="letterkey" aria-pressed="${on}"><span style="display:inline-block; ${state.slant ? 'transform:skewX(-12deg)' : ''}">${label}</span></button>`);
+      b.addEventListener('click', () => {
+        state.picked = on ? state.picked.filter((x) => x !== label) : [...state.picked, label];
+        renderKb(); updateCount();
       });
-      kb.appendChild(r);
+      r.appendChild(b);
     });
+    kb.appendChild(r);
   }
   const countEl2 = s.querySelector('#count');
   function updateCount() {
     const n = state.picked.length;
-    countEl2.textContent = n === 1 ? '1 letter gekozen' : `${n} letters gekozen`;
+    countEl2.textContent = n === 1 ? '1 gekozen' : `${n} gekozen`;
   }
   renderKb(); updateCount();
 
   s.querySelectorAll('[data-preset]').forEach((b) => b.addEventListener('click', () => {
-    const all = [...'abcdefghijklmnopqrstuvwxyz'.split(''), 'ij'];
+    const single = PATH_ORDER.filter((c) => c.length === 1);
     const map = {
-      vowels: VOWELS, consonants: all.filter((c) => !VOWELS.includes(c) && c !== 'ij'), all, none: [],
+      vowels: VOWELS.map(cs),
+      consonants: single.filter((c) => !VOWELS.includes(c)).map(cs),
+      klanken: PATH_ORDER.filter((c) => c.length > 1),
+      all: PATH_ORDER.map(cs),
+      none: [],
     };
-    state.picked = map[b.dataset.preset].map(cs);
+    state.picked = map[b.dataset.preset];
     renderKb(); updateCount();
   }));
   function syncOptChips() {

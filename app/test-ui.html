@@ -79,7 +79,9 @@ async function testWriteScreen(letter) {
   const svg = document.querySelector('#canvas');
   const g = document.querySelector('#slot');
   const def = LETTERS[letter];
-  for (let round = 0; round < 3; round++) {
+  // Zoals een echte leerling: een afgekeurde beurt (1 ster) telt niet mee
+  // en wordt overgedaan; na max 6 beurten geven we op.
+  for (let round = 0; round < 6 && !window.__lp.progress[letter]; round++) {
     for (const s of def.strokes) await traceStroke(svg, g, s.d);
     await wait(1700); // ghost-overlay + automatische overgang
   }
@@ -90,7 +92,7 @@ async function testWriteScreen(letter) {
 (async () => {
   await wait(200);
   JITTER = 8;
-  for (const l of ['D', 't', 'k', 'f', 'x', 'ij', 'B', 'a', 'o']) await testWriteScreen(l);
+  for (const l of ['D', 't', 'k', 'f', 'x', 'ij', 'B', 'a', 'o', 'ee', 'sch', 'ui']) await testWriteScreen(l);
   document.title = 'KLAAR';
 })();
 </script>
