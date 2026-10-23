@@ -32,6 +32,11 @@ function nextLetter() {
   return letterList().find((l) => !store.progress[l]) || letterList()[0];
 }
 function wordFor(letter) { return WORDS[letter.toLowerCase()] || ''; }
+// De geoefende letter telkens vet in het voorbeeldwoord.
+function wordMarkup(letter) {
+  const l = letter.toLowerCase();
+  return wordFor(letter).split(l).join(`<b>${l}</b>`);
+}
 
 /* ---------- kleine hulpjes -------------------------------------------- */
 function h(html) {
@@ -141,6 +146,20 @@ function report(letter, step, stars) {
 /* Schermen                                                               */
 /* ====================================================================== */
 
+// Gevulde silhouetten voor het startscherm: op kaartformaat duidelijker
+// dan lijn-iconen. De voorste persoon krijgt een randje in de kaartkleur
+// zodat de groep leesbaar blijft waar de silhouetten overlappen.
+function personFilled(size, color) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${color}" aria-hidden="true"><circle cx="12" cy="7" r="4.2"/><path d="M4.5 21v-1.2c0-3.4 3.4-6 7.5-6s7.5 2.6 7.5 6V21z"/></svg>`;
+}
+function groupFilled(size, color, edge) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${color}" aria-hidden="true">
+    <circle cx="4.9" cy="8.8" r="2.8"/><path d="M.8 20v-.8c0-2.4 1.8-4.1 4.1-4.1s4.1 1.7 4.1 4.1v.8z"/>
+    <circle cx="19.1" cy="8.8" r="2.8"/><path d="M15 20v-.8c0-2.4 1.8-4.1 4.1-4.1s4.1 1.7 4.1 4.1v.8z"/>
+    <g stroke="${edge}" stroke-width="1.6"><circle cx="12" cy="6.8" r="3.9"/><path d="M6 21v-1c0-3.2 2.6-5.5 6-5.5s6 2.3 6 5.5v1z"/></g>
+  </svg>`;
+}
+
 function screenStart() {
   const s = h(`<div class="screen">
     <div class="topbar"><span></span></div>
@@ -154,10 +173,11 @@ function screenStart() {
     <div style="padding:36px 20px 0; display:flex; flex-direction:column; gap:14px">
       <a href="#home" id="solo" aria-label="Alleen oefenen" style="min-height:128px; padding:20px; box-sizing:border-box; border-radius:24px; background:var(--primary); color:#fff; text-decoration:none; display:flex; align-items:center; gap:18px">
         <span style="width:64px; height:64px; flex-shrink:0; border-radius:18px; background:#fff; display:flex; align-items:center; justify-content:center">${icon('pencil', 34, '#2357D9')}</span>
+        ${personFilled(44, '#fff')}
       </a>
       <a href="#join" aria-label="Aansluiten bij een sessie" style="min-height:128px; padding:20px; box-sizing:border-box; border-radius:24px; background:#fff; border:2px solid var(--border); color:var(--ink); text-decoration:none; display:flex; align-items:center; gap:18px">
         <span style="width:64px; height:64px; flex-shrink:0; border-radius:18px; background:var(--primary-soft); display:flex; align-items:center; justify-content:center">${icon('qr', 34, '#2357D9')}</span>
-        ${icon('users', 40, '#2357D9', 2)}
+        ${groupFilled(48, '#2357D9', '#fff')}
       </a>
     </div>
     <div style="margin-top:auto; padding:16px 20px 32px; display:flex; justify-content:center">
@@ -348,7 +368,7 @@ function screenHome() {
     const statusInk = p ? 'var(--green-ink)' : isNow ? 'var(--primary)' : 'var(--muted)';
     const row = h(`<button style="min-height:60px; padding:8px 16px 8px 8px; border:none; border-radius:16px; background:var(--card); display:flex; align-items:center; gap:14px; cursor:pointer; text-align:left">
       <span class="letterfont" style="width:48px; height:48px; border-radius:12px; ${tile}; font-size:${l.length > 1 ? 24 : 32}px; line-height:1; display:flex; align-items:center; justify-content:center">${l}</span>
-      <span style="flex-grow:1; font-size:17px; color:${state === 'next' ? 'var(--muted)' : 'var(--ink)'}">${wordFor(l)}</span>
+      <span style="flex-grow:1; font-size:17px; color:${state === 'next' ? 'var(--muted)' : 'var(--ink)'}">${wordMarkup(l)}</span>
       <span style="font-size:15px; color:${statusInk}; font-weight:700">${status}</span>
     </button>`);
     row.addEventListener('click', () => openLetter(l));
