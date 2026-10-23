@@ -15,7 +15,8 @@ const store = {
   name: '', avatar: 'zon', code: '',
   session: null,           // Session (leerder) of null
   assignment: null,        // { letters, slant, lines } van de leerkracht
-  lines: 4, slant: false,  // lokale weergavekeuze
+  lines: 4, slant: false,  // weergave: komt in een sessie van de leerkracht
+  help: 'start',           // hulp bij het schrijven: 'dots' | 'start' | 'none'
   progress: {},            // letter -> { stars }
   currentLetter: null,
   anim: null,              // lopende animatie (om te stoppen)
@@ -201,15 +202,13 @@ function screenJoin() {
         style="position:absolute; width:1px; height:1px; opacity:0" aria-label="Sessiecode">
     </div>
     <div class="card" style="margin:16px 20px 0; display:flex; flex-direction:column; gap:14px">
-      <span style="font-size:17px; font-weight:700">Wie ben jij?</span>
-      <div id="avatars" style="display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:10px"></div>
       <div style="display:flex; flex-direction:column; gap:6px">
         <label for="voornaam" style="font-size:15px; color:var(--muted)">Voornaam</label>
         <input id="voornaam" class="textfield" autocomplete="given-name" value="${esc(store.name)}">
       </div>
     </div>
     <div class="bottombar" style="flex-direction:column; gap:8px">
-      <button id="go" class="btn primary">Aansluiten ${icon('arrow', 22, 'currentColor', 2.5)}</button>
+      <button id="go" class="btn primary" aria-label="Aansluiten">${icon('arrow', 30, 'currentColor', 2.5)}</button>
       <a href="#home" id="solo" style="min-height:48px; display:flex; align-items:center; justify-content:center; font-size:16px">Alleen oefenen</a>
     </div>
     <video id="qrvideo" style="display:none"></video>
@@ -230,17 +229,6 @@ function screenJoin() {
     code = input.value.replace(/\D/g, '').slice(0, 6);
     input.value = code;
     renderBoxes();
-  });
-
-  const avWrap = s.querySelector('#avatars');
-  AVATARS.forEach((a) => {
-    const b = h(`<button class="avatarbtn" aria-label="${a.id}" aria-pressed="${store.avatar === a.id}" style="background:${a.bg}">${icon(a.id, 30, a.ink)}</button>`);
-    b.addEventListener('click', () => {
-      store.avatar = a.id;
-      avWrap.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', 'false'));
-      b.setAttribute('aria-pressed', 'true');
-    });
-    avWrap.appendChild(b);
   });
 
   // QR scannen: alleen tonen als de browser het kan.
@@ -287,14 +275,18 @@ function screenJoin() {
       store.session = ses;
       store.assignment = msg.assignment || null;
       store.progress = {};
-      if (store.assignment) { store.lines = store.assignment.lines; store.slant = store.assignment.slant; }
+      if (store.assignment) {
+        store.lines = store.assignment.lines;
+        store.slant = store.assignment.slant;
+        store.help = store.assignment.help || 'start';
+      }
       toast('Aangesloten!');
       location.hash = '#home';
     });
     ses.on('badCode', () => { toast('Die code klopt niet. Vraag het nog eens.'); });
     ses.on('assign', (msg) => {
-      store.assignment = { letters: msg.letters, slant: msg.slant, lines: msg.lines };
-      store.lines = msg.lines; store.slant = msg.slant;
+      store.assignment = { letters: msg.letters, slant: msg.slant, lines: msg.lines, help: msg.help };
+      store.lines = msg.lines; store.slant = msg.slant; store.help = msg.help || 'start';
       store.progress = {};
       toast('Nieuwe opdracht van de leerkracht');
       if (location.hash === '#home') render(); else location.hash = '#home';
@@ -308,7 +300,7 @@ function screenJoin() {
     ses.on('disconnected', () => toast('Verbinding kwijt, opnieuw proberen…'));
     try {
       await ses.connect();
-      ses.join(code, name, store.avatar);
+      ses.join(code, name);
     } catch { toast('Geen verbinding met de server'); }
   });
   return s;
@@ -400,16 +392,11 @@ function screenWatch() {
   const letter = store.currentLetter || nextLetter();
   const def = LETTERS[letter];
   const vbW = Math.max(350, def.w + 80);
-  const word = wordFor(letter);
   let speed = 130; // eenheden per seconde
 
   const hear = h('<span style="width:48px"></span>');
   const s = h(`<div class="screen">
     <div id="top"></div>
-    <div style="padding:8px 20px 12px; display:flex; align-items:center; gap:12px">
-      <h1 class="letterfont" style="font-size:40px; line-height:1">${letter}</h1>
-      <span style="font-size:17px; color:var(--muted)">Kijk hoe je hem schrijft</span>
-    </div>
     <div class="drawbox">
       <svg id="canvas" viewBox="0 0 ${vbW} ${BOX_H}" role="img" aria-label="De letter ${letter} tekent zichzelf op de lijnen, vanaf het oranje startpunt">
         <g id="guides">${guidesMarkup(vbW, store.lines, store.slant)}</g>
@@ -424,32 +411,12 @@ function screenWatch() {
       <button id="again" class="btn ghost small">${icon('redo', 20)} Opnieuw</button>
       <button id="slower" class="chip" style="min-height:52px; border-radius:26px; padding:0 22px; font-weight:700; font-size:16px">${icon('slow', 20)} Trager</button>
     </div>
-    <div class="card" style="margin:20px 20px 0; padding:16px; display:flex; flex-direction:column; gap:12px">
-      <span style="font-size:14px; font-weight:700; color:var(--muted)">Lijnen</span>
-      <div id="lineopts" style="display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:8px"></div>
-    </div>
     <div class="bottombar">
-      <a href="#trace" class="btn primary" style="flex-grow:1">Nu jij ${icon('arrow', 22, 'currentColor', 2.5)}</a>
+      <a href="#trace" class="btn primary" aria-label="Nu jij: zelf overtrekken" style="flex-grow:1">${icon('arrow', 30, 'currentColor', 2.5)}</a>
     </div>
   </div>`);
 
   s.querySelector('#top').replaceWith(lessonTop('#home', 'Terug naar mijn leerpad', 1, hear));
-
-  // Lijnen-keuze: geen / 2 / 4 / schuin
-  const lineopts = s.querySelector('#lineopts');
-  const opts = [
-    { label: 'Geen', lines: 0, slant: false }, { label: '2', lines: 2, slant: false },
-    { label: '4', lines: 4, slant: false }, { label: 'Schuin', lines: store.lines || 4, slant: true },
-  ];
-  opts.forEach((o) => {
-    const on = store.slant === o.slant && (o.slant || store.lines === o.lines);
-    const b = h(`<button class="chip" style="justify-content:center; min-height:52px; border-radius:12px" aria-pressed="${on}">${o.label}</button>`);
-    b.addEventListener('click', () => {
-      store.lines = o.lines; store.slant = o.slant;
-      render();
-    });
-    lineopts.appendChild(b);
-  });
 
   // Animatie: streek per streek, met pennetje.
   const svg = s.querySelector('#canvas');
@@ -516,13 +483,9 @@ function screenTrace() {
   let tracer = new Tracer(letter);
   let drawing = false;
 
-  const eye = h(`<a class="iconbtn" href="#watch" aria-label="Toon de animatie opnieuw">${icon('eye', 24, '#2357D9')}</a>`);
+  const spacer = h('<span style="width:48px"></span>');
   const s = h(`<div class="screen">
     <div id="top"></div>
-    <div style="padding:8px 20px 12px; display:flex; align-items:center; gap:12px">
-      <h1 class="letterfont" style="font-size:40px; line-height:1">${letter}</h1>
-      <span style="font-size:17px; color:var(--muted)">Volg de grijze letter</span>
-    </div>
     <div class="drawbox">
       <svg id="canvas" viewBox="0 0 ${vbW} ${BOX_H}" aria-label="Overtrekvak voor de letter ${letter}">
         <g>${guidesMarkup(vbW, store.lines, store.slant)}</g>
@@ -537,7 +500,6 @@ function screenTrace() {
       <span id="fbicon">${icon('checkcircle', 28, 'var(--green-ink)', 2.2)}</span>
       <div style="display:flex; flex-direction:column; gap:2px">
         <span class="fb-title" id="fbtitle">Begin bij het oranje bolletje</span>
-        <span class="fb-sub" id="fbsub">Volg de pijlrichting van de letter.</span>
       </div>
     </div>
     <div class="card" style="margin:16px 20px 0; padding:14px 16px; display:flex; align-items:center; justify-content:space-between">
@@ -545,11 +507,10 @@ function screenTrace() {
       <div id="chips" style="display:flex; gap:10px"></div>
     </div>
     <div class="bottombar">
-      <button id="erase" class="iconbtn" style="width:60px; height:60px; border-radius:30px; border:2px solid var(--border)" aria-label="Uitvegen en opnieuw beginnen">${icon('eraser')}</button>
-      <a href="#write" id="next" class="btn primary" style="flex-grow:1; opacity:.45; pointer-events:none">Verder ${icon('arrow', 22, 'currentColor', 2.5)}</a>
+      <a href="#write" id="next" class="btn primary" aria-label="Verder naar schrijven" style="flex-grow:1; opacity:.45; pointer-events:none">${icon('arrow', 30, 'currentColor', 2.5)}</a>
     </div>
   </div>`);
-  s.querySelector('#top').replaceWith(lessonTop('#watch', 'Terug naar kijken', 2, eye));
+  s.querySelector('#top').replaceWith(lessonTop('#watch', 'Terug naar kijken', 2, spacer));
 
   const svg = s.querySelector('#canvas');
   const letterG = s.querySelector('#letter');
@@ -557,13 +518,11 @@ function screenTrace() {
   const markerG = s.querySelector('#marker');
   const fb = s.querySelector('#fb');
   const fbtitle = s.querySelector('#fbtitle');
-  const fbsub = s.querySelector('#fbsub');
   const fbicon = s.querySelector('#fbicon');
 
-  function setFb(kind, title, sub) {
+  function setFb(kind, title) {
     fb.className = `feedback ${kind}`;
     fbtitle.textContent = title;
-    fbsub.textContent = sub || '';
     fbicon.innerHTML = kind === 'good' ? icon('checkcircle', 28, 'var(--green-ink)', 2.2) : icon('redo', 26, 'var(--orange-ink)', 2.2);
   }
 
@@ -616,16 +575,15 @@ function screenTrace() {
     tracer = new Tracer(letter);
     drawing = false;
     updateInk();
-    setFb('idle', 'Begin bij het oranje bolletje', 'Volg de pijlrichting van de letter.');
+    setFb('idle', 'Begin bij het oranje bolletje');
   }
-  s.querySelector('#erase').addEventListener('click', resetAttempt);
 
   function finishAttempt() {
     const stars = tracer.stars();
     attempts.push(stars);
     updateChips();
     const txt = stars === 3 ? 'Super! Drie sterren!' : stars === 2 ? 'Goed zo! Twee sterren.' : 'Gelukt! Eén ster.';
-    setFb('good', txt, attempts.length < 3 ? 'Nog eens? Begin weer bij het bolletje.' : 'Je mag verder!');
+    setFb('good', txt);
     unlockNext();
     const best = Math.max(...attempts);
     report(letter, `Overtrekken · ${letter}`, best);
@@ -643,19 +601,19 @@ function screenTrace() {
     const p = svgPoint(svg, letterG, ev);
     const r = tracer.beginStroke(p);
     if (r === 'wrongStart') {
-      setFb('hint', 'Begin bij het oranje bolletje', 'Zet je vinger op het bolletje en vertrek daar.');
+      setFb('hint', 'Begin bij het oranje bolletje');
     } else {
       drawing = true;
-      setFb('good', 'Goed begonnen!', 'Volg de grijze letter.');
+      setFb('good', 'Goed begonnen!');
     }
     updateInk();
   });
   svg.addEventListener('pointermove', (ev) => {
     if (!drawing) return;
     const r = tracer.move(svgPoint(svg, letterG, ev));
-    if (r === 'offPath') setFb('hint', 'Blijf bij de lijn', 'Ga terug naar de grijze letter.');
-    else if (r === 'backwards') setFb('hint', 'Andere kant op', 'Volg de richting van de pijl.');
-    else if (tracer.fractionDone() > 0.15) setFb('good', 'Goed bezig!', 'Blijf de letter volgen.');
+    if (r === 'offPath') setFb('hint', 'Blijf bij de lijn');
+    else if (r === 'backwards') setFb('hint', 'Andere kant op');
+    else if (tracer.fractionDone() > 0.15) setFb('good', 'Goed bezig!');
     updateInk();
   });
   svg.addEventListener('pointerup', () => {
@@ -663,8 +621,8 @@ function screenTrace() {
     drawing = false;
     const r = tracer.endStroke();
     if (r === 'done-letter') { updateInk(); finishAttempt(); }
-    else if (r === 'done-stroke') { setFb('good', 'Goed zo!', 'Nu het volgende deel: begin bij het bolletje.'); updateInk(); }
-    else { setFb('hint', 'Bijna!', 'Trek de hele letter in één keer. Begin opnieuw bij het bolletje.'); tracer.progress = 0; updateInk(); }
+    else if (r === 'done-stroke') { setFb('good', 'Goed zo!'); updateInk(); }
+    else { setFb('hint', 'Bijna! Nog eens vanaf het bolletje'); tracer.progress = 0; updateInk(); }
   });
 
   report(letter, `Overtrekken · ${letter}`);
@@ -675,127 +633,115 @@ function screenTrace() {
 function screenWrite() {
   const letter = store.currentLetter || nextLetter();
   const def = LETTERS[letter];
-  const slotGap = 26;
-  const slots = Math.max(2, Math.min(5, Math.floor(520 / (def.w + slotGap))));
-  const vbW = slots * (def.w + slotGap) + slotGap;
-  let help = 'start'; // 'dots' | 'start' | 'none'
-  let slotDone = 0;
+  const vbW = Math.max(350, def.w + 80);
+  const help = store.help || 'start'; // bepaald door de leerkracht; alleen oefenen: startpunten
+  const attempts = [];
   let tracer = new Tracer(letter, { tolerance: 52, startRadius: 56 });
   let drawing = false;
-  let rawInk = []; // eigen pen-spoor in het actieve vak
+  let rawInk = []; // eigen pen-spoor van deze beurt
 
-  const hear = h('<span style="width:48px"></span>');
+  const spacer = h('<span style="width:48px"></span>');
   const s = h(`<div class="screen">
     <div id="top"></div>
-    <div class="card" style="margin:8px 20px 0; padding:16px; display:flex; align-items:center; gap:16px">
-      <div class="letterfont" style="width:88px; height:88px; flex-shrink:0; border-radius:18px; background:var(--primary-soft); font-size:${letter.length > 1 ? 44 : 64}px; line-height:1; display:flex; align-items:center; justify-content:center">${letter}</div>
-      <div style="display:flex; flex-direction:column; gap:4px">
-        <span style="font-size:20px; font-weight:700">Schrijf de letter ${slots} keer</span>
-        <span id="count" style="font-size:16px; color:var(--muted)">0 van ${slots} klaar</span>
-      </div>
-    </div>
-    <div class="drawbox" style="margin-top:16px">
-      <svg id="canvas" viewBox="0 0 ${vbW} ${BOX_H}" aria-label="Schrijfvak: schrijf de letter ${letter} ${slots} keer">
+    <div class="drawbox">
+      <svg id="canvas" viewBox="0 0 ${vbW} ${BOX_H}" aria-label="Schrijfvak: schrijf de letter ${letter} drie keer, één keer per beurt">
         <g>${guidesMarkup(vbW, store.lines, store.slant)}</g>
-        <g id="slots"></g>
+        <g id="slot" transform="${letterTransform(vbW, def.w, store.slant)}"></g>
       </svg>
     </div>
-    <div id="fb" class="feedback idle" role="status" style="min-height:56px">
+    <div id="fb" class="feedback idle" role="status">
+      <span id="fbicon">${icon('checkcircle', 28, 'var(--green-ink)', 2.2)}</span>
       <div style="display:flex; flex-direction:column; gap:2px">
-        <span class="fb-title" id="fbtitle">Schrijf de letter in het vak</span>
-        <span class="fb-sub" id="fbsub">Begin bij het oranje bolletje.</span>
+        <span class="fb-title" id="fbtitle">Schrijf de letter</span>
       </div>
     </div>
-    <div style="margin:16px 20px 0; display:flex; flex-direction:column; gap:10px">
-      <span style="font-size:14px; font-weight:700; color:var(--muted)">Hulp</span>
-      <div id="helps" style="display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px"></div>
+    <div class="card" style="margin:16px 20px 0; padding:14px 16px; display:flex; align-items:center; justify-content:space-between">
+      <span style="font-size:15px; color:var(--muted)">Probeer 3 keer</span>
+      <div id="chips" style="display:flex; gap:10px"></div>
     </div>
     <div class="bottombar">
       <button id="erase" class="iconbtn" style="width:60px; height:60px; border-radius:30px; border:2px solid var(--border)" aria-label="Uitvegen en opnieuw beginnen">${icon('eraser')}</button>
       <button id="doneBtn" class="btn primary" style="flex-grow:1" disabled>${icon('check', 22, 'currentColor', 2.5)} Klaar</button>
     </div>
   </div>`);
-  s.querySelector('#top').replaceWith(lessonTop('#trace', 'Terug naar overtrekken', 3, hear));
+  s.querySelector('#top').replaceWith(lessonTop('#trace', 'Terug naar overtrekken', 3, spacer));
 
   const svg = s.querySelector('#canvas');
-  const slotsG = s.querySelector('#slots');
+  const slotG = s.querySelector('#slot');
   const fb = s.querySelector('#fb');
   const fbtitle = s.querySelector('#fbtitle');
-  const fbsub = s.querySelector('#fbsub');
-  function setFb(kind, title, sub) {
+  const fbicon = s.querySelector('#fbicon');
+  function setFb(kind, title) {
     fb.className = 'feedback ' + kind;
-    fb.style.minHeight = '56px';
     fbtitle.textContent = title;
-    fbsub.textContent = sub || '';
+    fbicon.innerHTML = kind === 'hint' ? icon('redo', 26, 'var(--orange-ink)', 2.2) : icon('checkcircle', 28, 'var(--green-ink)', 2.2);
   }
 
-  function slotTransform(i) {
-    return `translate(${slotGap + i * (def.w + slotGap)},0)${store.slant ? ` matrix(1,0,-0.1405,1,${(0.1405 * BL).toFixed(1)},0)` : ''}`;
+  function renderSlot() {
+    let inner = '';
+    if (help === 'dots') inner += strokePaths(letter, (st) => `stroke="#B9C4D6" stroke-width="${st.dot ? 8 : 6}" stroke-dasharray="2 12" stroke-linecap="round" stroke-linejoin="round"`);
+    if (help !== 'none' && !tracer.done) inner += startDotMarkup(letter, tracer.strokeIndex, !drawing);
+    inner += '<g class="rawink"></g>';
+    slotG.innerHTML = inner;
+    updateRawInk();
   }
-
-  let activeG = null;
-  function renderSlots() {
-    slotsG.innerHTML = '';
-    for (let i = 0; i < slots; i++) {
-      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      g.setAttribute('transform', slotTransform(i));
-      let inner = '';
-      if (i < slotDone) {
-        inner = strokePaths(letter, (st) => `stroke="#2357D9" stroke-width="${st.dot ? 10 : 11}" stroke-linecap="round" stroke-linejoin="round"`);
-      } else {
-        if (help === 'dots') inner += strokePaths(letter, (st) => `stroke="#B9C4D6" stroke-width="${st.dot ? 8 : 6}" stroke-dasharray="2 12" stroke-linecap="round" stroke-linejoin="round"`);
-        if (i === slotDone && help !== 'none') inner += startDotMarkup(letter, tracer.strokeIndex, i === slotDone);
-        if (i === slotDone) inner += '<g class="rawink"></g><g class="reveal"></g>';
-        if (i > slotDone && help !== 'none') {
-          const p0 = samplePath(def.strokes[0].d).pts[0];
-          inner += `<circle cx="${p0[0]}" cy="${p0[1]}" r="9" fill="#C25E00" opacity="0.4"/>`;
-        }
-      }
-      g.innerHTML = inner;
-      slotsG.appendChild(g);
-      if (i === slotDone) activeG = g;
-    }
-  }
-  renderSlots();
 
   function updateRawInk() {
-    if (!activeG) return;
-    const ri = activeG.querySelector('.rawink');
+    const ri = slotG.querySelector('.rawink');
     if (!ri) return;
     ri.innerHTML = rawInk
       .map((seg) => `<path d="M ${seg.map((p) => `${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' L ')}" fill="none" stroke="#2357D9" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>`)
       .join('');
   }
 
-  const countEl = s.querySelector('#count');
+  const chips = s.querySelector('#chips');
+  function updateChips() {
+    chips.innerHTML = '';
+    for (let i = 0; i < 3; i++) {
+      const st = i < attempts.length ? 'done' : i === attempts.length ? 'now' : 'later';
+      const css = {
+        done: 'background:var(--green-bg); color:var(--green-ink)',
+        now: 'border:2px solid var(--primary); box-sizing:border-box; color:var(--primary); background:#fff',
+        later: 'background:var(--neutral); color:var(--muted)',
+      }[st];
+      chips.appendChild(h(`<span class="letterfont" aria-label="Keer ${i + 1}" style="width:44px; height:44px; border-radius:12px; ${css}; font-size:${letter.length > 1 ? 20 : 28}px; display:flex; align-items:center; justify-content:center">${letter}</span>`));
+    }
+  }
+
   const doneBtn = s.querySelector('#doneBtn');
 
-  function slotFinished() {
-    slotDone++;
+  function nextAttempt() {
     rawInk = [];
     tracer = new Tracer(letter, { tolerance: 52, startRadius: 56 });
-    countEl.textContent = `${slotDone} van ${slots} klaar`;
-    renderSlots();
-    if (slotDone >= slots) {
-      setFb('good', 'Alles geschreven. Knap!', 'Tik op Klaar.');
+    drawing = false;
+    renderSlot();
+    setFb('idle', 'Schrijf de letter');
+  }
+
+  function finishAttempt() {
+    attempts.push(1);
+    updateChips();
+    if (attempts.length >= 3) {
+      setFb('good', 'Alles geschreven. Knap!');
       doneBtn.disabled = false;
     } else {
-      setFb('good', 'Goed zo!', 'Schrijf hem nog eens in het volgende vak.');
+      setFb('good', 'Goed zo!');
+      setTimeout(nextAttempt, 900);
     }
   }
 
   svg.addEventListener('pointerdown', (ev) => {
-    if (slotDone >= slots || !activeG) return;
+    if (attempts.length >= 3) return;
     svg.setPointerCapture(ev.pointerId);
-    const p = svgPoint(svg, activeG, ev);
+    const p = svgPoint(svg, slotG, ev);
     const r = tracer.beginStroke(p);
     if (r === 'wrongStart') {
       // Na een misser tonen we het startpunt ook zonder hulp.
-      setFb('hint', 'Begin bij het bolletje', 'Kijk waar de oranje stip staat.');
+      setFb('hint', 'Begin bij het bolletje');
       if (help === 'none') {
-        const old = activeG.querySelector('.hintdot');
+        const old = slotG.querySelector('.hintdot');
         if (old) old.remove();
-        activeG.insertAdjacentHTML('beforeend', `<g class="hintdot">${startDotMarkup(letter, tracer.strokeIndex, true)}</g>`);
+        slotG.insertAdjacentHTML('beforeend', `<g class="hintdot">${startDotMarkup(letter, tracer.strokeIndex, true)}</g>`);
       }
       return;
     }
@@ -803,44 +749,29 @@ function screenWrite() {
     rawInk.push([p]);
   });
   svg.addEventListener('pointermove', (ev) => {
-    if (!drawing || !activeG) return;
-    const p = svgPoint(svg, activeG, ev);
+    if (!drawing) return;
+    const p = svgPoint(svg, slotG, ev);
     rawInk[rawInk.length - 1].push(p);
     updateRawInk();
     const r = tracer.move(p);
-    if (r === 'backwards') setFb('hint', 'Andere kant op', 'Denk aan de richting van de pijl.');
+    if (r === 'backwards') setFb('hint', 'Andere kant op');
   });
   svg.addEventListener('pointerup', () => {
     if (!drawing) return;
     drawing = false;
     const r = tracer.endStroke();
-    if (r === 'done-letter') slotFinished();
-    else if (r === 'done-stroke') { setFb('good', 'Goed zo!', 'Nu het volgende deel.'); renderSlots(); updateRawInk(); }
+    if (r === 'done-letter') finishAttempt();
+    else if (r === 'done-stroke') { setFb('good', 'Goed zo!'); renderSlot(); }
     else {
-      setFb('hint', 'Probeer nog eens', 'Schrijf de hele letter in één beweging.');
+      setFb('hint', 'Probeer nog eens');
       rawInk.pop();
       updateRawInk();
     }
   });
 
   s.querySelector('#erase').addEventListener('click', () => {
-    rawInk = [];
-    tracer = new Tracer(letter, { tolerance: 52, startRadius: 56 });
-    renderSlots();
-    setFb('idle', 'Schrijf de letter in het vak', 'Begin bij het oranje bolletje.');
-  });
-
-  const helps = s.querySelector('#helps');
-  [['dots', 'Stippels'], ['start', 'Startpunten'], ['none', 'Geen hulp']].forEach(([id, label]) => {
-    const b = h(`<button class="chip" style="justify-content:center; min-height:52px; border-radius:14px" aria-pressed="${help === id}">${label}</button>`);
-    b.addEventListener('click', () => {
-      help = id;
-      helps.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', 'false'));
-      b.setAttribute('aria-pressed', 'true');
-      renderSlots();
-      updateRawInk();
-    });
-    helps.appendChild(b);
+    if (attempts.length >= 3) return;
+    nextAttempt();
   });
 
   doneBtn.addEventListener('click', () => {
@@ -850,6 +781,8 @@ function screenWrite() {
     location.hash = '#home';
   });
 
+  renderSlot();
+  updateChips();
   report(letter, `Schrijven · ${letter}`);
   return s;
 }
@@ -857,7 +790,7 @@ function screenWrite() {
 /* ---------- leerkracht --------------------------------------------------- */
 function screenTeacher() {
   const state = {
-    picked: ['a'], upper: false, slant: false, lines: 4,
+    picked: ['a'], upper: false, slant: false, lines: 4, help: 'start',
     code: null, learners: new Map(), started: new Date(),
   };
   const ses = new Session();
@@ -924,6 +857,12 @@ function screenTeacher() {
               <button class="chip" data-lines="0">Geen</button>
               <button class="chip" data-lines="2">2</button>
               <button class="chip" data-lines="4">4</button>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px">
+              <span style="font-size:14px; font-weight:700; color:var(--muted)">Hulp</span>
+              <button class="chip" data-help="dots">Stippels</button>
+              <button class="chip" data-help="start">Startpunten</button>
+              <button class="chip" data-help="none">Geen</button>
             </div>
           </div>
           <button id="sendbtn" class="btn small" style="background:var(--ink); color:#fff">${icon('send', 20)} Stuur naar alle leerlingen</button>
@@ -996,9 +935,11 @@ function screenTeacher() {
   function syncOptChips() {
     s.querySelectorAll('[data-slant]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.slant === String(state.slant))));
     s.querySelectorAll('[data-lines]').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.lines) === state.lines)));
+    s.querySelectorAll('[data-help]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.help === state.help)));
   }
   s.querySelectorAll('[data-slant]').forEach((b) => b.addEventListener('click', () => { state.slant = b.dataset.slant === 'true'; renderKb(); syncOptChips(); }));
   s.querySelectorAll('[data-lines]').forEach((b) => b.addEventListener('click', () => { state.lines = Number(b.dataset.lines); syncOptChips(); }));
+  s.querySelectorAll('[data-help]').forEach((b) => b.addEventListener('click', () => { state.help = b.dataset.help; syncOptChips(); }));
   syncOptChips();
 
   /* -- leerlingen -- */
@@ -1010,11 +951,11 @@ function screenTeacher() {
     rowsEl.innerHTML = list.length
       ? ''
       : '<p style="padding:16px 12px; color:var(--muted); font-size:15px; border-top:1px solid #E3E8F0">Nog niemand aangesloten. Toon de code op het grote scherm.</p>';
-    list.forEach((l) => {
-      const av = avatarDef(l.avatar);
+    list.forEach((l, i) => {
+      const bg = ['#FDEBD8', '#E6F4EC', '#E8EEFC', '#EEF1F6'][i % 4];
       const klaar = l.step === 'Klaar';
       rowsEl.appendChild(h(`<div style="display:grid; grid-template-columns:2fr 1.5fr 1fr; gap:12px; align-items:center; padding:10px 12px; border-top:1px solid #E3E8F0; font-size:16px; ${l.connected ? '' : 'opacity:.45'}">
-        <span style="display:flex; align-items:center; gap:10px"><span style="width:32px; height:32px; border-radius:16px; background:${av.bg}; flex-shrink:0; display:flex; align-items:center; justify-content:center">${icon(av.id, 18, av.ink)}</span>${esc(l.name)}${l.connected ? '' : ' (weg)'}</span>
+        <span style="display:flex; align-items:center; gap:10px"><span style="width:32px; height:32px; border-radius:16px; background:${bg}; flex-shrink:0"></span>${esc(l.name)}${l.connected ? '' : ' (weg)'}</span>
         <span style="color:${klaar ? 'var(--green-ink)' : 'var(--ink)'}; font-weight:${klaar ? 700 : 400}">${klaar ? 'Klaar ✓' : esc(l.step || '—')}</span>
         <span style="color:var(--green-ink); font-weight:700">${l.stars ? '★'.repeat(l.stars) : '–'}</span>
       </div>`));
@@ -1067,7 +1008,7 @@ function screenTeacher() {
 
   s.querySelector('#sendbtn').addEventListener('click', () => {
     if (!state.picked.length) { toast('Kies eerst een paar letters'); return; }
-    ses.assign(state.picked, state.slant, state.lines);
+    ses.assign(state.picked, state.slant, state.lines, state.help);
     toast(`Opdracht gestuurd: ${state.picked.join(', ')}`);
   });
 

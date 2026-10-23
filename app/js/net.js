@@ -53,13 +53,13 @@ export class Session {
   create() { this.send({ type: 'create' }); }
 
   // Leerder: sluit aan; antwoord 'joined' of 'badCode'.
-  join(code, name, avatar) {
-    this._rejoin = { type: 'join', code, name, avatar };
+  join(code, name) {
+    this._rejoin = { type: 'join', code, name };
     this.send(this._rejoin);
   }
 
   // Leerkracht: stuur een opdracht naar alle leerders.
-  assign(letters, slant, lines) { this.send({ type: 'assign', letters, slant, lines }); }
+  assign(letters, slant, lines, help) { this.send({ type: 'assign', letters, slant, lines, help }); }
 
   // Leerder: meld voortgang (stap, letter, sterren).
   progress(letter, step, stars) { this.send({ type: 'progress', letter, step, stars }); }

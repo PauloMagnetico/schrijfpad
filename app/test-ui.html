@@ -77,21 +77,15 @@ async function testWriteScreen(letter) {
   location.hash = '#write';
   await wait(150);
   const svg = document.querySelector('#canvas');
+  const g = document.querySelector('#slot');
   const def = LETTERS[letter];
-  const slots = document.querySelectorAll('#slots > g').length;
-  const activeSlot = () => [...document.querySelectorAll('#slots > g')].find((g) => g.querySelector('.rawink'));
-  for (let slot = 0; slot < slots; slot++) {
-    for (const s of def.strokes) {
-      const g = activeSlot();
-      if (!g) { log(`WRITE ${letter}: geen actief vak meer bij slot ${slot}`); break; }
-      await traceStroke(svg, g, s.d);
-    }
-    await wait(30);
+  for (let round = 0; round < 3; round++) {
+    for (const s of def.strokes) await traceStroke(svg, g, s.d);
+    await wait(1000); // wachttijd tot de volgende beurt
   }
-  const count = document.querySelector('#count');
   const doneBtn = document.querySelector('#doneBtn');
   const fb = document.querySelector('#fbtitle');
-  log(`WRITE ${letter}: slots=${slots} count="${count ? count.textContent : '?'}" fb="${fb ? fb.textContent : '?'}" klaar-knop=${doneBtn ? (doneBtn.disabled ? 'UIT' : 'AAN') : '?'}`);
+  log(`WRITE ${letter}: fb="${fb ? fb.textContent : '?'}" klaar-knop=${doneBtn ? (doneBtn.disabled ? 'UIT' : 'AAN') : '?'}`);
 }
 
 (async () => {

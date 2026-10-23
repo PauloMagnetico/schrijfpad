@@ -140,7 +140,8 @@ wss.on('connection', (ws) => {
     if (role === 'teacher') {
       if (msg.type === 'assign') {
         const letters = Array.isArray(msg.letters) ? msg.letters.map(String).slice(0, 60) : [];
-        s.assignment = { letters, slant: !!msg.slant, lines: Number(msg.lines) || 0 };
+        const help = ['dots', 'start', 'none'].includes(msg.help) ? msg.help : 'start';
+        s.assignment = { letters, slant: !!msg.slant, lines: Number(msg.lines) || 0, help };
         for (const l of s.learners.values()) {
           send(l.ws, { type: 'assign', ...s.assignment });
         }
