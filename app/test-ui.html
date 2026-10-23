@@ -81,7 +81,7 @@ async function testWriteScreen(letter) {
   const def = LETTERS[letter];
   for (let round = 0; round < 3; round++) {
     for (const s of def.strokes) await traceStroke(svg, g, s.d);
-    await wait(1000); // wachttijd tot de volgende beurt
+    await wait(1600); // wachttijd tot de volgende beurt (ghost-overlay + reset)
   }
   const doneBtn = document.querySelector('#doneBtn');
   const fb = document.querySelector('#fbtitle');

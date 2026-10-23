@@ -12,7 +12,7 @@ const app = document.getElementById('app');
 /* ---------- toestand (fase 1: niets wordt bewaard) ------------------- */
 const store = {
   mode: 'solo',            // 'solo' | 'session'
-  name: '', avatar: 'zon', code: '',
+  name: '', code: '',
   session: null,           // Session (leerder) of null
   assignment: null,        // { letters, slant, lines } van de leerkracht
   lines: 4, slant: false,  // weergave: komt in een sessie van de leerkracht
@@ -81,18 +81,6 @@ function icon(name, size = 24, color = 'currentColor', sw = 2) {
   };
   return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || ''}</svg>`;
 }
-
-const AVATARS = [
-  { id: 'zon', bg: '#FDEBD8', ink: '#8A4200' },
-  { id: 'blad', bg: '#E6F4EC', ink: '#1E6B43' },
-  { id: 'ster', bg: '#E8EEFC', ink: '#163C9E' },
-  { id: 'maan', bg: '#EEF1F6', ink: '#172033' },
-  { id: 'bloem', bg: '#FDE8F0', ink: '#9B2C5D' },
-  { id: 'wolk', bg: '#E8F4FA', ink: '#1C5D7A' },
-  { id: 'vis', bg: '#E6F4EC', ink: '#1E6B43' },
-  { id: 'hart', bg: '#FDEBD8', ink: '#8A4200' },
-];
-function avatarDef(id) { return AVATARS.find((a) => a.id === id) || AVATARS[0]; }
 
 /* ---------- letters tekenen ------------------------------------------- */
 
@@ -164,23 +152,16 @@ function screenStart() {
       <p style="font-size:17px; color:var(--muted)">Leer schrijven, letter per letter.</p>
     </div>
     <div style="padding:36px 20px 0; display:flex; flex-direction:column; gap:14px">
-      <a href="#join" style="min-height:128px; padding:20px; box-sizing:border-box; border-radius:24px; background:var(--primary); color:#fff; text-decoration:none; display:flex; align-items:center; gap:18px">
-        <span style="width:64px; height:64px; flex-shrink:0; border-radius:18px; background:#fff; display:flex; align-items:center; justify-content:center">${icon('qr', 34, '#2357D9')}</span>
-        <span style="display:flex; flex-direction:column; gap:4px">
-          <span style="font-size:23px; font-weight:700">Aansluiten</span>
-          <span style="font-size:16px">Ik heb een code van de leerkracht</span>
-        </span>
+      <a href="#home" id="solo" aria-label="Alleen oefenen" style="min-height:128px; padding:20px; box-sizing:border-box; border-radius:24px; background:var(--primary); color:#fff; text-decoration:none; display:flex; align-items:center; gap:18px">
+        <span style="width:64px; height:64px; flex-shrink:0; border-radius:18px; background:#fff; display:flex; align-items:center; justify-content:center">${icon('pencil', 34, '#2357D9')}</span>
       </a>
-      <a href="#teacher" style="min-height:128px; padding:20px; box-sizing:border-box; border-radius:24px; background:#fff; border:2px solid var(--border); color:var(--ink); text-decoration:none; display:flex; align-items:center; gap:18px">
-        <span style="width:64px; height:64px; flex-shrink:0; border-radius:18px; background:var(--orange-bg); display:flex; align-items:center; justify-content:center">${icon('screen', 34, '#8A4200')}</span>
-        <span style="display:flex; flex-direction:column; gap:4px">
-          <span style="font-size:23px; font-weight:700">Sessie starten</span>
-          <span style="font-size:16px; color:var(--muted)">Ik ben leerkracht</span>
-        </span>
+      <a href="#join" aria-label="Aansluiten bij een sessie" style="min-height:128px; padding:20px; box-sizing:border-box; border-radius:24px; background:#fff; border:2px solid var(--border); color:var(--ink); text-decoration:none; display:flex; align-items:center; gap:18px">
+        <span style="width:64px; height:64px; flex-shrink:0; border-radius:18px; background:var(--primary-soft); display:flex; align-items:center; justify-content:center">${icon('qr', 34, '#2357D9')}</span>
+        ${icon('users', 40, '#2357D9', 2)}
       </a>
     </div>
     <div style="margin-top:auto; padding:16px 20px 32px; display:flex; justify-content:center">
-      <a href="#home" id="solo" style="min-height:48px; display:flex; align-items:center; font-size:17px">Alleen oefenen</a>
+      <a href="#teacher" style="min-height:48px; display:flex; align-items:center; font-size:17px; color:var(--muted)">Sessie starten · Ik ben leerkracht</a>
     </div>
   </div>`);
   s.querySelector('#solo').addEventListener('click', () => { store.mode = 'solo'; });
@@ -197,7 +178,6 @@ function screenJoin() {
     </div>
     <div style="padding:8px 20px 0; display:flex; flex-direction:column; gap:6px">
       <h1 style="font-size:26px">Aansluiten</h1>
-      <p style="font-size:17px; color:var(--muted)">Vraag de code aan je leerkracht.</p>
     </div>
     <div class="card" style="margin:18px 20px 0; display:flex; flex-direction:column; gap:14px">
       <button id="scan" class="btn small" style="border:2px solid var(--primary); background:var(--primary-soft); color:var(--primary-dark); display:none">${icon('qr', 24)} Scan de QR-code</button>
@@ -316,9 +296,8 @@ function screenJoin() {
 /* ---------- mijn leerpad ------------------------------------------------ */
 function screenHome() {
   const letters = letterList();
-  const current = nextLetter();
+  const current = letters.find((l) => !store.progress[l]) || null;
   const doneCount = letters.filter((l) => store.progress[l]).length;
-  const av = avatarDef(store.avatar);
   const inSession = store.mode === 'session';
   const title = inSession ? esc(store.name) : 'Oefenen';
   const sub = inSession
@@ -327,22 +306,22 @@ function screenHome() {
 
   const s = h(`<div class="screen">
     <div class="topbar" style="padding:20px 20px 12px">
-      <div style="display:flex; align-items:center; gap:12px">
-        <div style="width:48px; height:48px; border-radius:24px; background:${av.bg}; display:flex; align-items:center; justify-content:center">${icon(av.id, 26, av.ink)}</div>
-        <div style="display:flex; flex-direction:column">
-          <span style="font-size:20px; font-weight:700">${title}</span>
-          <span style="font-size:14px; color:${inSession ? 'var(--green-ink)' : 'var(--muted)'}; display:flex; align-items:center; gap:4px">${sub}</span>
-        </div>
+      <div style="display:flex; flex-direction:column">
+        <span style="font-size:20px; font-weight:700">${title}</span>
+        <span style="font-size:14px; color:${inSession ? 'var(--green-ink)' : 'var(--muted)'}; display:flex; align-items:center; gap:4px">${sub}</span>
       </div>
       <span id="spk"></span>
     </div>
-    <div style="margin:8px 20px 0; padding:22px; border-radius:24px; background:var(--primary); color:#fff; display:flex; align-items:center; gap:18px">
+    ${current ? `<div style="margin:8px 20px 0; padding:22px; border-radius:24px; background:var(--primary); color:#fff; display:flex; align-items:center; gap:18px">
       <div class="letterfont" style="width:96px; height:96px; flex-shrink:0; border-radius:20px; background:#fff; color:var(--ink); font-size:${current.length > 1 ? 48 : 72}px; line-height:1; display:flex; align-items:center; justify-content:center">${current}</div>
       <div style="display:flex; flex-direction:column; gap:10px; flex-grow:1">
-        <span style="font-size:15px">Letter van vandaag</span>
+        <span style="font-size:15px">Volgende letter</span>
         <button id="startbtn" class="btn small" style="align-self:flex-start; background:#fff; color:var(--primary); padding:0 20px">${icon('play', 20, 'var(--primary)')} Start</button>
       </div>
-    </div>
+    </div>` : `<div style="margin:8px 20px 0; padding:22px; border-radius:24px; background:var(--green-bg); color:var(--green-ink); display:flex; align-items:center; gap:18px">
+      <div class="letterfont" style="width:96px; height:96px; flex-shrink:0; border-radius:20px; background:#fff; font-size:56px; line-height:1; display:flex; align-items:center; justify-content:center">★</div>
+      <span style="font-size:18px; font-weight:700">Alles geoefend! Tik op een letter om te herhalen.</span>
+    </div>`}
     <div style="padding:24px 20px 8px; display:flex; align-items:baseline; justify-content:space-between">
       <h1 style="font-size:20px">Mijn leerpad</h1>
       <span style="font-size:15px; color:var(--muted)">${doneCount} van ${letters.length} letters</span>
@@ -355,7 +334,8 @@ function screenHome() {
     </nav>
   </div>`);
 
-  s.querySelector('#startbtn').addEventListener('click', () => openLetter(current));
+  const startBtn = s.querySelector('#startbtn');
+  if (startBtn) startBtn.addEventListener('click', () => openLetter(current));
   s.querySelector('#navwords').addEventListener('click', () => toast('Woorden oefenen komt binnenkort'));
 
   const list = s.querySelector('#list');
@@ -728,12 +708,15 @@ function screenWrite() {
   function finishAttempt() {
     attempts.push(1);
     updateChips();
+    // Even de grijze vorm over de eigen letter: zo zie je zelf hoe het ging.
+    slotG.insertAdjacentHTML('beforeend', `<g class="ghost">${strokePaths(letter, (st) => `stroke="#C7CFDD" stroke-width="${st.dot ? 18 : 26}" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"`)}</g>`);
     if (attempts.length >= 3) {
       setFb('good', 'Alles geschreven. Knap!');
       doneBtn.disabled = false;
+      setTimeout(() => { const g0 = slotG.querySelector('.ghost'); if (g0) g0.remove(); }, 1400);
     } else {
       setFb('good', 'Goed zo!');
-      setTimeout(nextAttempt, 900);
+      setTimeout(nextAttempt, 1400);
     }
   }
 
@@ -784,8 +767,17 @@ function screenWrite() {
   doneBtn.addEventListener('click', () => {
     const stars = store.traceStars || 1;
     store.progress[letter] = { stars };
+    // Automatisch door naar de volgende letter; pas terug naar het
+    // leerpad wanneer alles af is.
+    const next = letterList().find((l) => !store.progress[l]);
     report(letter, 'Klaar', stars);
-    location.hash = '#home';
+    if (next) {
+      store.currentLetter = next;
+      location.hash = '#watch';
+    } else {
+      store.currentLetter = null;
+      location.hash = '#home';
+    }
   });
 
   renderSlot();
