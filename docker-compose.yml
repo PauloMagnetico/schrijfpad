@@ -1,0 +1,13 @@
+services:
+  letterpad:
+    build: .
+    container_name: letterpad
+    restart: unless-stopped
+    # Ook rechtstreeks op de host bereikbaar (debug): http://WerkBak:8083
+    ports:
+      - "8083:8080"
+    networks: [web]
+
+networks:
+  web:
+    external: true

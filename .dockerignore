@@ -1,0 +1,7 @@
+.git
+node_modules
+server/node_modules
+README.md
+app/test-trace.html
+app/test-ui.html
+app/test-grid.html

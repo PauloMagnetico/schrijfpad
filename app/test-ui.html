@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>UI-test</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="js/vendor-qrcode.js"></script>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast" class="toast"></div>
+<div id="printsheet"></div>
+<pre id="testout"></pre>
+<script type="module" src="js/main.js"></script>
+<script type="module">
+import { LETTERS } from './js/letters.js';
+import { samplePath } from './js/engine.js';
+
+Element.prototype.setPointerCapture = () => {};
+const out = [];
+window.addEventListener('error', (e) => log(`FOUT: ${e.message} @ ${e.filename}:${e.lineno}`));
+window.addEventListener('unhandledrejection', (e) => log(`REJECTIE: ${e.reason}`));
+const log = (m) => { out.push(m); document.getElementById('testout').textContent = out.join('\n'); };
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function fire(el, type, cx, cy) {
+  el.dispatchEvent(new PointerEvent(type, { clientX: cx, clientY: cy, bubbles: true, pointerId: 1, isPrimary: true, pointerType: 'touch' }));
+}
+function clientPt(g, x, y) {
+  const svg = g.ownerSVGElement;
+  const p = svg.createSVGPoint();
+  p.x = x; p.y = y;
+  return p.matrixTransform(g.getScreenCTM());
+}
+// Volg één streek met synthetische pointer-events; jitter bootst een echte
+// vinger na (minder events, trillend, net niet op het beginpunt).
+let JITTER = 0;
+function rnd(n) { return (Math.random() * 2 - 1) * n; }
+async function traceStroke(svg, g, d) {
+  const { pts } = samplePath(d);
+  const step = JITTER ? 3 : 1; // echte vinger: ~12 eenheden tussen events
+  const c0 = clientPt(g, pts[0][0] + rnd(JITTER * 2), pts[0][1] + rnd(JITTER * 2));
+  fire(svg, 'pointerdown', c0.x, c0.y);
+  for (let i = 0; i < pts.length; i += step) {
+    const c = clientPt(g, pts[i][0] + rnd(JITTER), pts[i][1] + rnd(JITTER));
+    fire(svg, 'pointermove', c.x, c.y);
+  }
+  const [ex, ey] = pts[pts.length - 1];
+  const cE = clientPt(g, ex + rnd(JITTER), ey + rnd(JITTER));
+  fire(svg, 'pointermove', cE.x, cE.y);
+  fire(svg, 'pointerup', cE.x, cE.y);
+  await wait(30);
+}
+
+async function testTraceScreen(letter) {
+  location.hash = '#watch';
+  await wait(80);
+  // currentLetter zetten kan niet van buitenaf; we gaan via home → eerste letter.
+  location.hash = '#trace';
+  await wait(120);
+  const svg = document.querySelector('#canvas');
+  const g = document.querySelector('#letter');
+  const def = LETTERS[letter];
+  for (let round = 0; round < 3; round++) {
+    for (const s of def.strokes) await traceStroke(svg, g, s.d);
+    await wait(1100); // resetAttempt-timeout
+  }
+  const fb = document.querySelector('#fbtitle');
+  const next = document.querySelector('#next');
+  log(`TRACE ${letter}: fb="${fb ? fb.textContent : '?'}" verder=${next ? next.style.pointerEvents : '?'}`);
+}
+
+async function testWriteScreen(letter) {
+  location.hash = '#home';
+  await wait(100);
+  window.__lp.currentLetter = letter;
+  location.hash = '#write';
+  await wait(150);
+  const svg = document.querySelector('#canvas');
+  const def = LETTERS[letter];
+  const slots = document.querySelectorAll('#slots > g').length;
+  const activeSlot = () => [...document.querySelectorAll('#slots > g')].find((g) => g.querySelector('.rawink'));
+  for (let slot = 0; slot < slots; slot++) {
+    for (const s of def.strokes) {
+      const g = activeSlot();
+      if (!g) { log(`WRITE ${letter}: geen actief vak meer bij slot ${slot}`); break; }
+      await traceStroke(svg, g, s.d);
+    }
+    await wait(30);
+  }
+  const count = document.querySelector('#count');
+  const doneBtn = document.querySelector('#doneBtn');
+  const fb = document.querySelector('#fbtitle');
+  log(`WRITE ${letter}: slots=${slots} count="${count ? count.textContent : '?'}" fb="${fb ? fb.textContent : '?'}" klaar-knop=${doneBtn ? (doneBtn.disabled ? 'UIT' : 'AAN') : '?'}`);
+}
+
+(async () => {
+  await wait(200);
+  JITTER = 8;
+  for (const l of ['D', 't', 'k', 'f', 'x', 'ij', 'B', 'a', 'o']) await testWriteScreen(l);
+  document.title = 'KLAAR';
+})();
+</script>
+</body>
+</html>

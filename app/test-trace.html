@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="nl">
+<head><meta charset="utf-8"><title>Tracer-test</title></head>
+<body>
+<pre id="out"></pre>
+<script type="module">
+import { LETTERS } from './js/letters.js';
+import { Tracer, samplePath } from './js/engine.js';
+
+const results = [];
+for (const [letter, def] of Object.entries(LETTERS)) {
+  for (const params of [{ name: 'trace' }, { name: 'write', tolerance: 40, startRadius: 46 }]) {
+    const tr = new Tracer(letter, params);
+    const log = [];
+    let ok = true;
+    for (let si = 0; si < def.strokes.length; si++) {
+      const { pts } = samplePath(def.strokes[si].d);
+      const b = tr.beginStroke(pts[0]);
+      if (b !== 'ok') { log.push(`stroke ${si}: begin=${b}`); ok = false; break; }
+      if (!tr.isDot) {
+        for (const p of pts) {
+          const m = tr.move(p);
+          if (m !== 'ok') log.push(`stroke ${si}: move=${m} at ${p.map((n) => n.toFixed(0))}`);
+        }
+      }
+      const e = tr.endStroke();
+      const expected = si === def.strokes.length - 1 ? 'done-letter' : 'done-stroke';
+      if (e !== expected) { log.push(`stroke ${si}: end=${e}, verwacht ${expected} (progress ${(tr.fractionDone() * 100).toFixed(0)}%)`); ok = false; break; }
+    }
+    if (!ok || log.length) results.push({ letter, mode: params.name, ok, stars: ok ? tr.stars() : 0, log });
+  }
+}
+document.getElementById('out').textContent = JSON.stringify({ failures: results, total: Object.keys(LETTERS).length }, null, 1);
+document.title = 'KLAAR';
+</script>
+</body>
+</html>
