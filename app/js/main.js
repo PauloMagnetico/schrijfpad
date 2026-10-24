@@ -71,6 +71,7 @@ function icon(name, size = 24, color = 'currentColor', sw = 2) {
     speaker: '<path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>',
     back: '<path d="M15 18l-6-6 6-6"/>',
     close: '<path d="M6 6l12 12M18 6 6 18"/>',
+    download: '<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>',
     qr: '<path d="M3 7V4h3M18 4h3v3M21 17v3h-3M6 20H3v-3"/><rect x="7" y="7" width="4" height="4"/><rect x="13" y="13" width="4" height="4"/><path d="M13 7h4v3M7 17v-3h3"/>',
     arrow: '<path d="M5 12h14"/><path d="m13 6 6 6-6 6"/>',
     play: '<path d="M7 4v16l13-8z"/>',
@@ -1146,7 +1147,10 @@ function screenTeacher() {
 
       <div style="flex:999 1 520px; min-width:0">
         <div class="card" style="padding:24px; display:flex; flex-direction:column; gap:14px">
-          <span id="joined" style="align-self:flex-end; font-size:15px; color:var(--muted)">0 aangesloten</span>
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:12px">
+            <button id="pdfnu" class="btn ghost small" style="padding:0 16px">${icon('download', 20)} Bewaar als pdf</button>
+            <span id="joined" style="font-size:15px; color:var(--muted)">0 aangesloten</span>
+          </div>
           <div style="overflow-x:auto">
             <div style="min-width:420px; display:flex; flex-direction:column">
               <div style="display:grid; grid-template-columns:1.8fr 1.4fr 0.9fr 1.1fr; gap:12px; padding:8px 12px; font-size:14px; font-weight:700; color:var(--muted)">
@@ -1360,6 +1364,12 @@ function screenTeacher() {
       <p style="margin:0 0 16px">Sessie ${code} · ${when}</p>
       ${blocks || '<p>Er was niemand aangesloten.</p>'}`;
   }
+
+  // Resultaten op elk moment bewaren, zonder de sessie te stoppen.
+  s.querySelector('#pdfnu').addEventListener('click', () => {
+    document.getElementById('printsheet').innerHTML = buildReport();
+    window.print();
+  });
 
   s.querySelector('#stopses').addEventListener('click', () => {
     const ov = h(`<div class="overlay" style="background:rgba(23,32,51,.5); padding:24px; box-sizing:border-box">
