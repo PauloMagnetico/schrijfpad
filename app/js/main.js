@@ -21,6 +21,7 @@ const store = {
   currentLetter: null,
   anim: null,              // lopende animatie (om te stoppen)
   soloLetters: null,       // letters van de gekozen oefenwoorden (alleen oefenen)
+  soloVorm: null,          // oefenvorm: 'leerpad' of 'geheugen'
   oefenModus: 'woorden',   // oefenpagina: 'letters' of 'woorden' kiezen
   oefenWoorden: [],        // aangeduide referentiewoorden op de oefenpagina
   oefenLetters: [],        // aangeduide losse letters/klanken op de oefenpagina
@@ -502,24 +503,38 @@ function screenOefenType() {
       <h1 style="font-size:24px"><span class="letterfont">${esc(kopTekst)}</span></h1>
     </div>
     <div style="padding:18px 20px 24px; display:grid; grid-template-columns:1fr 1fr; gap:14px">
-      <button id="letters" aria-label="De letters van de gekozen woorden oefenen" class="card" style="min-height:140px; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:12px">
-        <span class="letterfont" style="font-size:24px; line-height:1.3; color:var(--primary); text-align:center">${rij.join(' ')}</span>
-        <span style="font-size:16px; font-weight:700">Letters</span>
+      <button id="leerpad" aria-label="Leerpad met deze letters: kijken, overtrekken en schrijven" class="card" style="min-height:140px; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:12px">
+        ${icon('path', 32, 'var(--primary)')}
+        <span class="letterfont" style="font-size:20px; line-height:1.3; color:var(--primary); text-align:center">${rij.join(' ')}</span>
+        <span style="font-size:16px; font-weight:700">Leerpad</span>
       </button>
-      <div aria-label="Het woord schrijven, komt binnenkort" class="card" style="min-height:140px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; opacity:.45">
-        ${icon('pencil', 36, 'var(--primary)')}
-        <span style="font-size:16px; font-weight:700">Woord</span>
-      </div>
+      <button id="geheugen" aria-label="Geheugenoefening: schrijf de letters na elkaar uit het hoofd" class="card" style="min-height:140px; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:12px">
+        ${icon('ster', 32, 'var(--orange)')}
+        <span style="font-size:16px; font-weight:700">Geheugen</span>
+      </button>
       <div aria-label="Meer oefeningen volgen nog" style="min-height:140px; border-radius:24px; border:2px dashed var(--border); display:flex; align-items:center; justify-content:center; color:var(--line); font-size:40px">+</div>
     </div>
   </div>`);
-  s.querySelector('#letters').addEventListener('click', () => {
+  function startVorm(vorm) {
     store.mode = 'solo';
+    store.soloVorm = vorm;
     store.soloLetters = rij;
     store.progress = {};
-    store.currentLetter = rij[0];
-    location.hash = '#watch';
-  });
+    if (vorm === 'leerpad') {
+      // Eigen leerpad, los van een sessie: zelfde overzicht en flow.
+      store.help = 'start';
+      store.currentLetter = null;
+      location.hash = '#home';
+    } else {
+      // Geheugen: meteen schrijven, zonder voorbeeld of startpunthulp;
+      // alleen het referentiewoord bovenaan blijft als steun.
+      store.help = 'none';
+      store.currentLetter = rij[0];
+      location.hash = '#write';
+    }
+  }
+  s.querySelector('#leerpad').addEventListener('click', () => startVorm('leerpad'));
+  s.querySelector('#geheugen').addEventListener('click', () => startVorm('geheugen'));
   return s;
 }
 
@@ -635,10 +650,10 @@ function screenWatch() {
     </div>
   </div>`);
 
-  const soloWoord = store.mode === 'solo' && store.soloLetters;
+  const soloOefening = store.mode === 'solo' && store.soloLetters && store.soloVorm !== 'leerpad';
   s.querySelector('#top').replaceWith(lessonTop(
-    soloWoord ? '#oefentype' : '#home',
-    soloWoord ? 'Terug naar de typekeuze' : 'Terug naar mijn leerpad',
+    soloOefening ? '#oefentype' : '#home',
+    soloOefening ? 'Terug naar de typekeuze' : 'Terug naar mijn leerpad',
     1, verder,
   ));
 
@@ -863,7 +878,12 @@ function screenWrite() {
       <div id="chips" style="display:flex; gap:10px"></div>
     </div>
   </div>`);
-  s.querySelector('#top').replaceWith(lessonTop('#trace', 'Terug naar overtrekken', 3, doneBtn));
+  const geheugen = store.mode === 'solo' && store.soloLetters && store.soloVorm === 'geheugen';
+  s.querySelector('#top').replaceWith(lessonTop(
+    geheugen ? '#oefentype' : '#trace',
+    geheugen ? 'Terug naar de typekeuze' : 'Terug naar overtrekken',
+    3, doneBtn,
+  ));
 
   const svg = s.querySelector('#canvas');
   const slotG = s.querySelector('#slot');
@@ -910,13 +930,22 @@ function screenWrite() {
     updateChips();
   }
 
+  const soloOefening = () => store.mode === 'solo' && store.soloLetters;
   function goNextLetter() {
     const next = letterList().find((l) => !store.progress[l]);
-    if (next) { store.currentLetter = next; location.hash = '#watch'; return; }
+    if (next) {
+      store.currentLetter = next;
+      // Geheugenvorm: meteen schrijven, zonder kijken en overtrekken.
+      location.hash = soloOefening() && store.soloVorm === 'geheugen' ? '#write' : '#watch';
+      return;
+    }
     store.currentLetter = null;
-    // Woordoefening (alleen oefenen) af → terug naar de woordenkeuze.
-    if (store.mode === 'solo' && store.soloLetters) { store.soloLetters = null; location.hash = '#oefen'; }
-    else location.hash = '#home';
+    if (soloOefening()) {
+      // Leerpad: terug naar het eigen leerpadoverzicht (alles groen);
+      // geheugen: terug naar de keuzepagina.
+      if (store.soloVorm === 'leerpad') location.hash = '#home';
+      else { store.soloLetters = null; location.hash = '#oefen'; }
+    } else location.hash = '#home';
   }
 
   // Sterren = het aantal goede (groene) schrijfbeurten.
@@ -948,7 +977,7 @@ function screenWrite() {
       report(letter, 'Klaar', greenCount());
     }
     store.currentLetter = null;
-    if (store.mode === 'solo' && store.soloLetters) { store.soloLetters = null; location.hash = '#oefen'; }
+    if (soloOefening() && store.soloVorm !== 'leerpad') { store.soloLetters = null; location.hash = '#oefen'; }
     else location.hash = '#home';
   });
 
