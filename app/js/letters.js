@@ -36,16 +36,20 @@ function shiftX(d, dx) {
 }
 
 // Een klank van meer letters wordt als één geheel ingeoefend: de delen
-// staan naast elkaar, streken in schrijfvolgorde per deelletter.
+// staan naast elkaar, streken in schrijfvolgorde per deelletter. De eerste
+// streek van elke volgende deelletter krijgt newLetter: daar pauzeert de
+// kijkanimatie even; binnen een letter loopt ze vloeiend door.
 function compose(parts) {
   let dx = 0;
   const strokes = [];
-  for (const p of parts) {
-    for (const st of lower[p].strokes) {
-      strokes.push(Object.assign({}, st, { d: shiftX(st.d, dx) }));
-    }
+  parts.forEach((p, pi) => {
+    lower[p].strokes.forEach((st, si) => {
+      const copy = Object.assign({}, st, { d: shiftX(st.d, dx) });
+      if (pi > 0 && si === 0) copy.newLetter = true;
+      strokes.push(copy);
+    });
     dx += lower[p].w;
-  }
+  });
   return { w: dx, strokes };
 }
 

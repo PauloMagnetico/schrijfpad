@@ -209,11 +209,11 @@ function screenJoin() {
       <h1 style="font-size:26px">Aansluiten</h1>
     </div>
     <div class="card" style="margin:18px 20px 0; display:flex; flex-direction:column; gap:14px">
-      <button id="scan" class="btn small" style="border:2px solid var(--primary); background:var(--primary-soft); color:var(--primary-dark); display:none">${icon('qr', 24)} Scan de QR-code</button>
-      <div id="of" style="display:none; align-items:center; gap:10px; color:var(--muted); font-size:15px">
-        <span style="flex-grow:1; height:1px; background:var(--border)"></span>of typ de code<span style="flex-grow:1; height:1px; background:var(--border)"></span>
+      <div id="keuze" style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+        <button id="scan" style="display:none; min-height:88px; border-radius:16px; border:2px solid var(--border); background:#fff; color:var(--ink); font-family:inherit; font-size:15px; font-weight:700; cursor:pointer; flex-direction:column; align-items:center; justify-content:center; gap:8px">${icon('qr', 30, '#2357D9')}<span>Scan de QR-code</span></button>
+        <button id="typ" style="min-height:88px; border-radius:16px; border:2px solid var(--border); background:#fff; color:var(--ink); font-family:inherit; font-size:15px; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px"><span class="letterfont" style="font-size:24px; line-height:1; color:var(--primary)">123</span><span>Typ de code</span></button>
       </div>
-      <div class="codeboxes" id="boxes" role="button" tabindex="0" aria-label="Sessiecode, zes cijfers"></div>
+      <div class="codeboxes" id="boxes" role="button" tabindex="0" aria-label="Sessiecode, zes cijfers" style="display:none"></div>
       <input id="codeinput" inputmode="numeric" autocomplete="one-time-code" maxlength="6"
         style="position:absolute; width:1px; height:1px; opacity:0" aria-label="Sessiecode">
     </div>
@@ -232,7 +232,18 @@ function screenJoin() {
 
   const boxes = s.querySelector('#boxes');
   const input = s.querySelector('#codeinput');
+  const scanBtn = s.querySelector('#scan');
+  const typBtn = s.querySelector('#typ');
   input.value = code;
+  function showBoxes() { boxes.style.display = 'grid'; }
+  function choose(btn) {
+    [scanBtn, typBtn].forEach((b) => {
+      const on = b === btn;
+      b.setAttribute('aria-pressed', String(on));
+      b.style.borderColor = on ? 'var(--primary)' : 'var(--border)';
+      b.style.background = on ? 'var(--primary-soft)' : '#fff';
+    });
+  }
   function renderBoxes() {
     boxes.innerHTML = '';
     for (let i = 0; i < 6; i++) {
@@ -276,7 +287,7 @@ function screenJoin() {
           const codes = await det.detect(video);
           for (const c of codes) {
             const m = c.rawValue.match(/(\d{6})/);
-            if (m) { code = m[1]; input.value = code; renderBoxes(); stopCam(); return; }
+            if (m) { code = m[1]; input.value = code; showBoxes(); renderBoxes(); stopCam(); return; }
           }
         } catch { /* volgende poging */ }
         requestAnimationFrame(tick);
@@ -284,21 +295,25 @@ function screenJoin() {
       tick();
     } catch { toast('Camera niet beschikbaar'); }
   }
+  typBtn.addEventListener('click', () => { choose(typBtn); showBoxes(); input.focus(); });
   if (canScan) {
-    const scanBtn = s.querySelector('#scan');
     scanBtn.style.display = 'flex';
-    s.querySelector('#of').style.display = 'flex';
-    scanBtn.addEventListener('click', startScan);
+    scanBtn.addEventListener('click', () => { choose(scanBtn); startScan(); });
+  } else {
+    // Zonder QR-ondersteuning valt er niets te kiezen: meteen de code typen.
+    s.querySelector('#keuze').style.display = 'none';
+    showBoxes();
   }
+  if (code) showBoxes();
   if (store.autoScan) {
     store.autoScan = false;
-    if (canScan && code.length !== 6) startScan();
+    if (canScan && code.length !== 6) { choose(scanBtn); startScan(); }
   }
 
   s.querySelector('#solo').addEventListener('click', () => { store.mode = 'solo'; });
   s.querySelector('#go').addEventListener('click', async () => {
     const name = s.querySelector('#voornaam').value.trim();
-    if (code.length !== 6) { toast('Typ de code van 6 cijfers'); input.focus(); return; }
+    if (code.length !== 6) { toast('Typ de code van 6 cijfers'); showBoxes(); input.focus(); return; }
     if (!name) { toast('Typ je voornaam'); s.querySelector('#voornaam').focus(); return; }
     store.name = name;
     store.code = code;
@@ -473,9 +488,9 @@ function screenWatch() {
       const len = p.getTotalLength();
       p.style.strokeDasharray = len;
       p.style.strokeDashoffset = len;
-      return { p, len, dot: !!st.dot };
+      return { p, len, dot: !!st.dot, newLetter: !!st.newLetter };
     });
-    let i = 0, t0 = null;
+    let i = 0, t0 = null, pause = 0;
     markerG.innerHTML = startDotMarkup(letter, 0, false);
     const pen = h(`<svg><circle r="9" fill="#C25E00" stroke="#fff" stroke-width="3"/></svg>`).firstElementChild;
     function frame(ts) {
@@ -485,7 +500,7 @@ function screenWatch() {
         return;
       }
       const st = strokes[i];
-      if (t0 === null) { t0 = ts; markerG.innerHTML = startDotMarkup(letter, i, false); markerG.appendChild(pen); }
+      if (t0 === null) { t0 = ts + pause; pause = 0; markerG.innerHTML = startDotMarkup(letter, i, false); markerG.appendChild(pen); }
       const el = (ts - t0) / 1000;
       const dist = Math.max(0, el) * speed;
       const done = Math.min(st.len, dist);
@@ -493,11 +508,16 @@ function screenWatch() {
       const pt = st.p.getPointAtLength(done);
       pen.setAttribute('cx', pt.x); pen.setAttribute('cy', pt.y);
       if (done >= st.len) {
-        // Meteen door met de volgende streek: de rest van deze beeldtijd
-        // telt al mee, zo loopt de beweging vloeiend door de penliften heen.
         i++;
-        t0 = done < dist && st.len > 0 ? ts - ((dist - st.len) / speed) * 1000 : null;
-        if (i < strokes.length && t0 !== null) { markerG.innerHTML = startDotMarkup(letter, i, false); markerG.appendChild(pen); }
+        if (i < strokes.length && strokes[i].newLetter) {
+          // Tussen de letters van een klank wél even pauzeren.
+          t0 = null; pause = 350;
+        } else {
+          // Binnen een letter loopt de beweging vloeiend door de penliften
+          // heen: de rest van deze beeldtijd telt meteen mee.
+          t0 = done < dist && st.len > 0 ? ts - ((dist - st.len) / speed) * 1000 : null;
+          if (i < strokes.length && t0 !== null) { markerG.innerHTML = startDotMarkup(letter, i, false); markerG.appendChild(pen); }
+        }
       }
       store.anim = requestAnimationFrame(frame);
     }
