@@ -21,7 +21,9 @@ const store = {
   currentLetter: null,
   anim: null,              // lopende animatie (om te stoppen)
   soloLetters: null,       // letters van de gekozen oefenwoorden (alleen oefenen)
+  oefenModus: 'woorden',   // oefenpagina: 'letters' of 'woorden' kiezen
   oefenWoorden: [],        // aangeduide referentiewoorden op de oefenpagina
+  oefenLetters: [],        // aangeduide losse letters/klanken op de oefenpagina
 };
 
 function letterList() {
@@ -371,57 +373,92 @@ function screenJoin() {
   return s;
 }
 
-/* ---------- alleen oefenen: woorden kiezen ------------------------------- */
-// Individuele oefensessie (geen leerpad): de leerling duidt één of meer
-// referentiewoorden aan en gaat met de blauwe Volgende-knop naar de
-// aparte typekeuzepagina (#oefentype).
+/* ---------- alleen oefenen: letters of woorden kiezen --------------------- */
+// Individuele oefensessie (geen leerpad): de leerling kiest bovenaan met
+// een icoontje voor losse letters ("a") of woorden ("tas"), duidt er één
+// of meer aan en gaat met de blauwe Volgende-knop naar de aparte
+// typekeuzepagina (#oefentype).
 function screenOefen() {
-  let gekozen = [...(store.oefenWoorden || [])]; // aangeduide woorden, in klikvolgorde
+  let modus = store.oefenModus || 'woorden';
+  let gekozenW = [...(store.oefenWoorden || [])];
+  let gekozenL = [...(store.oefenLetters || [])];
   const s = h(`<div class="screen">
     <div class="topbar">
       <a class="iconbtn" href="#start" aria-label="Terug naar het startscherm">${icon('back')}</a>
       <button id="volgende" class="iconbtn" aria-label="Volgende" style="background:var(--primary); color:#fff; opacity:.45; pointer-events:none">${icon('arrow', 26, 'currentColor', 2.5)}</button>
     </div>
-    <div style="padding:8px 20px 0">
-      <h1 style="font-size:26px">Kies woorden</h1>
+    <div style="padding:8px 20px 0; display:grid; grid-template-columns:1fr 1fr; gap:10px">
+      <button id="kiesletters" aria-label="Letters oefenen" class="card letterfont" style="min-height:64px; font-size:30px; line-height:1; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center">a</button>
+      <button id="kieswoorden" aria-label="Woorden oefenen" class="card letterfont" style="min-height:64px; font-size:26px; line-height:1; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center">tas</button>
     </div>
     <div id="inhoud" style="padding:18px 20px 24px"></div>
   </div>`);
   const inhoud = s.querySelector('#inhoud');
   const volgende = s.querySelector('#volgende');
+  const kiesL = s.querySelector('#kiesletters');
+  const kiesW = s.querySelector('#kieswoorden');
   // Terug op de keuzepagina: een eventueel lopende woordoefening vervalt.
   store.soloLetters = null;
   store.currentLetter = null;
 
+  const selectie = () => (modus === 'letters' ? gekozenL : gekozenW);
   function updateVolgende() {
-    const aan = gekozen.length > 0;
+    const aan = selectie().length > 0;
     volgende.style.opacity = aan ? '1' : '.45';
     volgende.style.pointerEvents = aan ? 'auto' : 'none';
   }
-  updateVolgende();
 
-  // Overzichtelijk raster: alle woordknoppen even groot, zelfde letter.
-  const grid = h('<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px"></div>');
-  WOORDEN.forEach((w) => {
-    const b = h(`<button class="card letterfont" style="min-height:60px; padding:0 8px; font-size:min(32px, 8.5vw); line-height:1; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center">${w}</button>`);
-    const kleur = () => {
-      const on = gekozen.includes(w);
-      b.setAttribute('aria-pressed', String(on));
-      b.style.background = on ? 'var(--primary)' : '';
-      b.style.color = on ? '#fff' : '';
-    };
-    kleur();
-    b.addEventListener('click', () => {
-      gekozen = gekozen.includes(w) ? gekozen.filter((x) => x !== w) : [...gekozen, w];
-      kleur(); updateVolgende();
+  function toggleKnop(b, on) {
+    b.setAttribute('aria-pressed', String(on));
+    b.style.background = on ? 'var(--primary)' : '';
+    b.style.color = on ? '#fff' : '';
+  }
+
+  function renderRaster() {
+    toggleKnop(kiesL, modus === 'letters');
+    toggleKnop(kiesW, modus === 'woorden');
+    updateVolgende();
+    inhoud.innerHTML = '';
+    if (modus === 'letters') {
+      // Losse letters en klanken in de aanleervolgorde.
+      const grid = h('<div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:8px"></div>');
+      PATH_ORDER.forEach((l) => {
+        const b = h(`<button class="card letterfont" style="min-height:56px; padding:0; font-size:${l.length > 1 ? 20 : 28}px; line-height:1; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center">${l}</button>`);
+        const kleur = () => toggleKnop(b, gekozenL.includes(l));
+        kleur();
+        b.addEventListener('click', () => {
+          gekozenL = gekozenL.includes(l) ? gekozenL.filter((x) => x !== l) : [...gekozenL, l];
+          kleur(); updateVolgende();
+        });
+        grid.appendChild(b);
+      });
+      inhoud.appendChild(grid);
+      return;
+    }
+    // Overzichtelijk raster: alle woordknoppen even groot, zelfde letter.
+    const grid = h('<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px"></div>');
+    WOORDEN.forEach((w) => {
+      const b = h(`<button class="card letterfont" style="min-height:60px; padding:0 8px; font-size:min(32px, 8.5vw); line-height:1; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center">${w}</button>`);
+      const kleur = () => toggleKnop(b, gekozenW.includes(w));
+      kleur();
+      b.addEventListener('click', () => {
+        gekozenW = gekozenW.includes(w) ? gekozenW.filter((x) => x !== w) : [...gekozenW, w];
+        kleur(); updateVolgende();
+      });
+      grid.appendChild(b);
     });
-    grid.appendChild(b);
-  });
-  inhoud.appendChild(grid);
+    inhoud.appendChild(grid);
+  }
+
+  kiesL.addEventListener('click', () => { modus = 'letters'; renderRaster(); });
+  kiesW.addEventListener('click', () => { modus = 'woorden'; renderRaster(); });
+  renderRaster();
 
   volgende.addEventListener('click', () => {
-    if (!gekozen.length) return;
-    store.oefenWoorden = gekozen;
+    if (!selectie().length) return;
+    store.oefenModus = modus;
+    store.oefenWoorden = gekozenW;
+    store.oefenLetters = gekozenL;
     location.hash = '#oefentype';
   });
   return s;
@@ -431,19 +468,22 @@ function screenOefen() {
 // Aparte pagina: het type oefening voor de gekozen woorden. "Letters" is
 // actief; de andere tegels werkt de lesgever hier verder uit.
 function screenOefenType() {
-  const woorden = store.oefenWoorden || [];
-  if (!woorden.length) { location.hash = '#oefen'; return h('<div class="screen"></div>'); }
-  // Oefenrij: de letters en klanken van alle gekozen woorden, zonder dubbels.
+  const modus = store.oefenModus || 'woorden';
+  // Oefenrij: de gekozen letters, of de letters en klanken van alle
+  // gekozen woorden, zonder dubbels.
   const rij = [];
-  woorden.forEach((w) => segment(w).forEach((l) => { if (!rij.includes(l)) rij.push(l); }));
+  if (modus === 'letters') rij.push(...(store.oefenLetters || []));
+  else (store.oefenWoorden || []).forEach((w) => segment(w).forEach((l) => { if (!rij.includes(l)) rij.push(l); }));
+  if (!rij.length) { location.hash = '#oefen'; return h('<div class="screen"></div>'); }
+  const kopTekst = modus === 'letters' ? rij.join(', ') : (store.oefenWoorden || []).join(', ');
 
   const s = h(`<div class="screen">
     <div class="topbar">
-      <a class="iconbtn" href="#oefen" aria-label="Terug naar de woorden">${icon('back')}</a>
+      <a class="iconbtn" href="#oefen" aria-label="Terug naar de keuze">${icon('back')}</a>
       <span style="width:48px"></span>
     </div>
     <div style="padding:8px 20px 0">
-      <h1 style="font-size:24px"><span class="letterfont">${esc(woorden.join(', '))}</span></h1>
+      <h1 style="font-size:24px"><span class="letterfont">${esc(kopTekst)}</span></h1>
     </div>
     <div style="padding:18px 20px 24px; display:grid; grid-template-columns:1fr 1fr; gap:14px">
       <button id="letters" aria-label="De letters van de gekozen woorden oefenen" class="card" style="min-height:140px; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:12px">
