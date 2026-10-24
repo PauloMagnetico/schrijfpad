@@ -649,10 +649,11 @@ function openLetter(l) {
 
 /* ---------- gedeelde kop van de oefenschermen -------------------------- */
 function lessonTop(backHash, backLabel, step, rightBtn) {
+  // step 0: geen stappenbolletjes (de geheugenoefening heeft maar één stap).
   const dots = [1, 2, 3].map((i) => `<span class="${i <= step ? 'on' : ''}"></span>`).join('');
   const bar = h(`<div class="topbar">
     <a class="iconbtn" href="${backHash}" aria-label="${backLabel}">${icon('back')}</a>
-    <div class="stepdots" aria-label="Stap ${step} van 3">${dots}</div>
+    ${step ? `<div class="stepdots" aria-label="Stap ${step} van 3">${dots}</div>` : '<span></span>'}
     <span id="right"></span>
   </div>`);
   bar.querySelector('#right').replaceWith(rightBtn);
@@ -920,7 +921,7 @@ function screenWrite() {
   s.querySelector('#top').replaceWith(lessonTop(
     geheugen ? '#oefentype' : '#trace',
     geheugen ? 'Terug naar de typekeuze' : 'Terug naar overtrekken',
-    3, doneBtn,
+    geheugen ? 0 : 3, doneBtn,
   ));
 
   const svg = s.querySelector('#canvas');
