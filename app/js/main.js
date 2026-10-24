@@ -20,6 +20,7 @@ const store = {
   progress: {},            // letter -> { stars }
   currentLetter: null,
   anim: null,              // lopende animatie (om te stoppen)
+  autoScan: false,         // vanaf het startscherm: camera meteen openen op #join
 };
 
 function letterList() {
@@ -64,6 +65,7 @@ function icon(name, size = 24, color = 'currentColor', sw = 2) {
   const paths = {
     speaker: '<path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>',
     back: '<path d="M15 18l-6-6 6-6"/>',
+    close: '<path d="M6 6l12 12M18 6 6 18"/>',
     qr: '<path d="M3 7V4h3M18 4h3v3M21 17v3h-3M6 20H3v-3"/><rect x="7" y="7" width="4" height="4"/><rect x="13" y="13" width="4" height="4"/><path d="M13 7h4v3M7 17v-3h3"/>',
     arrow: '<path d="M5 12h14"/><path d="m13 6 6 6-6 6"/>',
     play: '<path d="M7 4v16l13-8z"/>',
@@ -180,7 +182,7 @@ function screenStart() {
         <span style="width:64px; height:64px; flex-shrink:0; border-radius:18px; background:#fff; display:flex; align-items:center; justify-content:center">${icon('pencil', 34, '#2357D9')}</span>
         ${personFilled(44, '#fff')}
       </a>
-      <a href="#join" aria-label="Aansluiten bij een sessie" style="min-height:128px; padding:20px; box-sizing:border-box; border-radius:24px; background:#fff; border:2px solid var(--border); color:var(--ink); text-decoration:none; display:flex; align-items:center; gap:18px">
+      <a href="#join" id="joinqr" aria-label="Aansluiten bij een sessie" style="min-height:128px; padding:20px; box-sizing:border-box; border-radius:24px; background:#fff; border:2px solid var(--border); color:var(--ink); text-decoration:none; display:flex; align-items:center; gap:18px">
         <span style="width:64px; height:64px; flex-shrink:0; border-radius:18px; background:var(--primary-soft); display:flex; align-items:center; justify-content:center">${icon('qr', 34, '#2357D9')}</span>
         ${groupFilled(48, '#2357D9', '#fff')}
       </a>
@@ -190,6 +192,8 @@ function screenStart() {
     </div>
   </div>`);
   s.querySelector('#solo').addEventListener('click', () => { store.mode = 'solo'; });
+  // Kiest de leerling "aansluiten", dan opent de camera meteen om de QR-code te scannen.
+  s.querySelector('#joinqr').addEventListener('click', () => { store.autoScan = true; });
   return s;
 }
 
@@ -243,35 +247,52 @@ function screenJoin() {
     renderBoxes();
   });
 
-  // QR scannen: alleen tonen als de browser het kan.
-  if ('BarcodeDetector' in window && navigator.mediaDevices) {
+  // QR scannen: alleen als de browser het kan. Komt de leerling via het
+  // startscherm, dan opent de camera vanzelf; de knop blijft voor opnieuw scannen.
+  const canScan = 'BarcodeDetector' in window && navigator.mediaDevices;
+  async function startScan() {
+    const video = s.querySelector('#qrvideo');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      video.srcObject = stream;
+      video.style.cssText = 'display:block; position:fixed; inset:0; width:100%; height:100%; object-fit:cover; z-index:60';
+      await video.play();
+      const sluit = h(`<button class="iconbtn" aria-label="Camera sluiten" style="position:fixed; top:20px; right:16px; z-index:61">${icon('close')}</button>`);
+      document.body.appendChild(sluit);
+      const det = new BarcodeDetector({ formats: ['qr_code'] });
+      const stopCam = () => {
+        stream.getTracks().forEach((t) => t.stop());
+        video.srcObject = null;
+        video.style.display = 'none';
+        sluit.remove();
+        removeEventListener('hashchange', stopCam);
+      };
+      sluit.addEventListener('click', stopCam, { once: true });
+      video.addEventListener('click', stopCam, { once: true });
+      addEventListener('hashchange', stopCam);
+      const tick = async () => {
+        if (!video.srcObject || video.style.display === 'none') return;
+        try {
+          const codes = await det.detect(video);
+          for (const c of codes) {
+            const m = c.rawValue.match(/(\d{6})/);
+            if (m) { code = m[1]; input.value = code; renderBoxes(); stopCam(); return; }
+          }
+        } catch { /* volgende poging */ }
+        requestAnimationFrame(tick);
+      };
+      tick();
+    } catch { toast('Camera niet beschikbaar'); }
+  }
+  if (canScan) {
     const scanBtn = s.querySelector('#scan');
     scanBtn.style.display = 'flex';
     s.querySelector('#of').style.display = 'flex';
-    scanBtn.addEventListener('click', async () => {
-      const video = s.querySelector('#qrvideo');
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-        video.srcObject = stream;
-        video.style.cssText = 'display:block; position:fixed; inset:0; width:100%; height:100%; object-fit:cover; z-index:60';
-        await video.play();
-        const det = new BarcodeDetector({ formats: ['qr_code'] });
-        const stopCam = () => { stream.getTracks().forEach((t) => t.stop()); video.style.display = 'none'; };
-        video.addEventListener('click', stopCam, { once: true });
-        const tick = async () => {
-          if (!video.srcObject || video.style.display === 'none') return;
-          try {
-            const codes = await det.detect(video);
-            for (const c of codes) {
-              const m = c.rawValue.match(/(\d{6})/);
-              if (m) { code = m[1]; input.value = code; renderBoxes(); stopCam(); return; }
-            }
-          } catch { /* volgende poging */ }
-          requestAnimationFrame(tick);
-        };
-        tick();
-      } catch { toast('Camera niet beschikbaar'); }
-    });
+    scanBtn.addEventListener('click', startScan);
+  }
+  if (store.autoScan) {
+    store.autoScan = false;
+    if (canScan && code.length !== 6) startScan();
   }
 
   s.querySelector('#solo').addEventListener('click', () => { store.mode = 'solo'; });
