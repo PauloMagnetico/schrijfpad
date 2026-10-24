@@ -613,7 +613,6 @@ function screenTrace() {
     unlockNext();
     const best = Math.max(...attempts);
     report(letter, `Overtrekken · ${letter}`, best);
-    store.traceStars = best;
     if (attempts.length >= 3) {
       setTimeout(() => { location.hash = '#write'; }, 1200);
     } else {
@@ -742,9 +741,9 @@ function screenWrite() {
     attempts.push(stars);
     updateChips();
     if (attempts.length >= 3) {
-      const starsBest = store.traceStars || 1;
-      store.progress[letter] = { stars: starsBest };
-      report(letter, 'Klaar', starsBest);
+      // Sterren = het aantal groene blokjes bij het afronden van de oefening.
+      store.progress[letter] = { stars: attempts.length };
+      report(letter, 'Klaar', attempts.length);
       // Automatisch door naar de volgende letter; pas terug naar het
       // leerpad wanneer alles af is.
       setTimeout(goNextLetter, 1600);
@@ -753,12 +752,12 @@ function screenWrite() {
     }
   }
 
-  // Klaar-knop: meteen door naar de volgende letter.
+  // Klaar-knop: meteen door naar de volgende letter. Wie vroeger stopt,
+  // krijgt evenveel sterren als er blokjes groen zijn.
   s.querySelector('#done').addEventListener('click', () => {
     if (!store.progress[letter]) {
-      const starsBest = store.traceStars || 0;
-      store.progress[letter] = { stars: starsBest };
-      report(letter, 'Klaar', starsBest);
+      store.progress[letter] = { stars: attempts.length };
+      report(letter, 'Klaar', attempts.length);
     }
     goNextLetter();
   });
