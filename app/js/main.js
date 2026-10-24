@@ -387,9 +387,12 @@ function screenOefen() {
       <a class="iconbtn" href="#start" aria-label="Terug naar het startscherm">${icon('back')}</a>
       <button id="volgende" class="iconbtn" aria-label="Volgende" style="background:var(--primary); color:#fff; opacity:.45; pointer-events:none">${icon('arrow', 26, 'currentColor', 2.5)}</button>
     </div>
-    <div style="padding:8px 20px 0; display:grid; grid-template-columns:1fr 1fr; gap:10px">
-      <button id="kiesletters" aria-label="Letters oefenen" class="card letterfont" style="min-height:64px; font-size:30px; line-height:1; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center">a</button>
-      <button id="kieswoorden" aria-label="Woorden oefenen" class="card letterfont" style="min-height:64px; font-size:26px; line-height:1; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center">tas</button>
+    <div style="padding:8px 20px 0">
+      <!-- Schakelaar, duidelijk anders dan de keuzeknoppen eronder. -->
+      <div role="group" aria-label="Wat wil je oefenen?" style="display:grid; grid-template-columns:1fr 1fr; border:2px solid var(--primary); border-radius:28px; overflow:hidden; background:#fff">
+        <button id="kiesletters" aria-label="Letters oefenen" class="letterfont" style="min-height:52px; font-size:26px; line-height:1; border:none; background:transparent; cursor:pointer">a</button>
+        <button id="kieswoorden" aria-label="Woorden oefenen" class="letterfont" style="min-height:52px; font-size:22px; line-height:1; border:none; background:transparent; cursor:pointer">tas</button>
+      </div>
     </div>
     <div id="inhoud" style="padding:18px 20px 24px"></div>
   </div>`);
@@ -413,10 +416,16 @@ function screenOefen() {
     b.style.background = on ? 'var(--primary)' : '';
     b.style.color = on ? '#fff' : '';
   }
+  // De schakelaar zelf: gevulde helft = actief, andere helft wit met blauwe letter.
+  function modusKnop(b, on) {
+    b.setAttribute('aria-pressed', String(on));
+    b.style.background = on ? 'var(--primary)' : 'transparent';
+    b.style.color = on ? '#fff' : 'var(--primary)';
+  }
 
   function renderRaster() {
-    toggleKnop(kiesL, modus === 'letters');
-    toggleKnop(kiesW, modus === 'woorden');
+    modusKnop(kiesL, modus === 'letters');
+    modusKnop(kiesW, modus === 'woorden');
     updateVolgende();
     inhoud.innerHTML = '';
     if (modus === 'letters') {
