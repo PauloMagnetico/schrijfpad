@@ -672,7 +672,7 @@ function screenWrite() {
       <div id="chips" style="display:flex; gap:10px"></div>
     </div>
     <div class="bottombar">
-      <button id="done" class="btn primary" aria-label="Klaar, naar de volgende letter" style="flex-grow:1">${icon('check', 30, 'currentColor', 2.5)}</button>
+      <button id="done" class="btn primary" aria-label="Klaar, terug naar mijn leerpad" style="flex-grow:1">${icon('check', 30, 'currentColor', 2.5)}</button>
     </div>
   </div>`);
   s.querySelector('#top').replaceWith(lessonTop('#trace', 'Terug naar overtrekken', 3, spacer));
@@ -752,14 +752,15 @@ function screenWrite() {
     }
   }
 
-  // Klaar-knop: meteen door naar de volgende letter. Wie vroeger stopt,
-  // krijgt evenveel sterren als er blokjes groen zijn.
+  // Klaar-knop: rondt de letter af en keert terug naar mijn leerpad.
+  // Wie vroeger stopt, krijgt evenveel sterren als er blokjes groen zijn.
   s.querySelector('#done').addEventListener('click', () => {
     if (!store.progress[letter]) {
       store.progress[letter] = { stars: attempts.length };
       report(letter, 'Klaar', attempts.length);
     }
-    goNextLetter();
+    store.currentLetter = null;
+    location.hash = '#home';
   });
 
   svg.addEventListener('pointerdown', (ev) => {
