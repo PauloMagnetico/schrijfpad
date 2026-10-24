@@ -178,11 +178,11 @@ function screenStart() {
       <p style="font-size:17px; color:var(--muted)">Leer schrijven, letter per letter.</p>
     </div>
     <div style="padding:36px 20px 0; display:flex; flex-direction:column; gap:14px">
-      <a href="#home" id="solo" aria-label="Alleen oefenen" style="min-height:128px; padding:20px; box-sizing:border-box; border-radius:24px; background:var(--primary); color:#fff; text-decoration:none; display:flex; align-items:center; gap:18px">
+      <a href="#home" id="solo" aria-label="Alleen oefenen" style="min-height:128px; padding:20px; box-sizing:border-box; border-radius:24px; background:var(--primary); color:#fff; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:18px">
         <span style="width:64px; height:64px; flex-shrink:0; border-radius:18px; background:#fff; display:flex; align-items:center; justify-content:center">${icon('pencil', 34, '#2357D9')}</span>
         ${personFilled(44, '#fff')}
       </a>
-      <a href="#join" id="joinqr" aria-label="Aansluiten bij een sessie" style="min-height:128px; padding:20px; box-sizing:border-box; border-radius:24px; background:#fff; border:2px solid var(--border); color:var(--ink); text-decoration:none; display:flex; align-items:center; gap:18px">
+      <a href="#join" id="joinqr" aria-label="Aansluiten bij een sessie" style="min-height:128px; padding:20px; box-sizing:border-box; border-radius:24px; background:#fff; border:2px solid var(--border); color:var(--ink); text-decoration:none; display:flex; align-items:center; justify-content:center; gap:18px">
         <span style="width:64px; height:64px; flex-shrink:0; border-radius:18px; background:var(--primary-soft); display:flex; align-items:center; justify-content:center">${icon('qr', 34, '#2357D9')}</span>
         ${groupFilled(48, '#2357D9', '#fff')}
       </a>
