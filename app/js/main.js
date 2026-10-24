@@ -444,7 +444,7 @@ function screenOefen() {
       // Losse letters en klanken in de aanleervolgorde.
       const grid = h('<div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:8px"></div>');
       PATH_ORDER.forEach((l) => {
-        const b = h(`<button class="card letterfont" style="min-height:56px; padding:0; font-size:${l.length > 1 ? 20 : 28}px; line-height:1; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center">${l}</button>`);
+        const b = h(`<button class="card letterfont" style="min-height:56px; padding:0; font-size:28px; line-height:1; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center">${l}</button>`);
         const kleur = () => toggleKnop(b, gekozenL.includes(l));
         kleur();
         b.addEventListener('click', () => {
