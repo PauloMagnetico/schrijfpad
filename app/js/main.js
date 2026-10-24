@@ -20,12 +20,14 @@ const store = {
   progress: {},            // letter -> { stars }
   currentLetter: null,
   anim: null,              // lopende animatie (om te stoppen)
+  soloLetters: null,       // letters van het gekozen oefenwoord (alleen oefenen)
 };
 
 function letterList() {
   if (store.mode === 'session' && store.assignment && store.assignment.letters.length) {
     return store.assignment.letters;
   }
+  if (store.mode === 'solo' && store.soloLetters) return store.soloLetters;
   return PATH_ORDER;
 }
 function nextLetter() {
@@ -345,31 +347,72 @@ function screenJoin() {
   return s;
 }
 
-/* ---------- alleen oefenen: oefeningen ---------------------------------- */
-// Aparte pagina voor de individuele oefensessie (geen leerpad): een
-// overzicht van oefeningen, verder uit te werken door de lesgever.
+/* ---------- alleen oefenen: woorden en oefentypes ------------------------ */
+// Individuele oefensessie (geen leerpad): de leerling kiest eerst een
+// referentiewoord en daarna het type oefening. Voorlopig is alleen
+// "Letters" actief (de letters en klanken van het woord, één voor één);
+// meer oefentypes werkt de lesgever later uit.
 function screenOefen() {
   const s = h(`<div class="screen">
     <div class="topbar">
-      <a class="iconbtn" href="#start" aria-label="Terug naar het startscherm">${icon('back')}</a>
+      <a class="iconbtn" id="terug" href="#start" aria-label="Terug naar het startscherm">${icon('back')}</a>
       <span></span>
     </div>
     <div style="padding:8px 20px 0">
-      <h1 style="font-size:26px">Oefenen</h1>
+      <h1 id="kop" style="font-size:26px">Kies een woord</h1>
     </div>
-    <div style="padding:18px 20px 0; display:grid; grid-template-columns:1fr 1fr; gap:14px">
-      <a href="#home" aria-label="Letters oefenen" class="card" style="min-height:140px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; text-decoration:none; color:var(--ink)">
-        <span class="letterfont" style="font-size:40px; line-height:1; color:var(--primary)">abc</span>
-        <span style="font-size:16px; font-weight:700">Letters</span>
-      </a>
-      <div aria-label="Woorden oefenen, komt binnenkort" class="card" style="min-height:140px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; opacity:.45">
-        ${icon('pencil', 36, 'var(--primary)')}
-        <span style="font-size:16px; font-weight:700">Woorden</span>
-      </div>
-      <div aria-label="Meer oefeningen volgen nog" style="min-height:140px; border-radius:24px; border:2px dashed var(--border); display:flex; align-items:center; justify-content:center; color:var(--line); font-size:40px">+</div>
-    </div>
+    <div id="inhoud" style="padding:18px 20px 24px"></div>
   </div>`);
-  s.querySelector('a[href="#home"]').addEventListener('click', () => { store.mode = 'solo'; });
+  const inhoud = s.querySelector('#inhoud');
+  const kop = s.querySelector('#kop');
+  const terug = s.querySelector('#terug');
+  // Terug op de keuzepagina: een eventueel lopende woordoefening vervalt.
+  store.soloLetters = null;
+  store.currentLetter = null;
+
+  function toonWoorden() {
+    terug.setAttribute('href', '#start');
+    terug.setAttribute('aria-label', 'Terug naar het startscherm');
+    terug.onclick = null;
+    kop.textContent = 'Kies een woord';
+    inhoud.innerHTML = '';
+    const grid = h('<div style="display:flex; flex-wrap:wrap; gap:10px"></div>');
+    WOORDEN.forEach((w) => {
+      const b = h(`<button class="card letterfont" style="min-height:56px; padding:0 18px; font-size:24px; border:none; cursor:pointer">${w}</button>`);
+      b.addEventListener('click', () => toonTypes(w));
+      grid.appendChild(b);
+    });
+    inhoud.appendChild(grid);
+  }
+
+  function toonTypes(w) {
+    terug.setAttribute('href', '#oefen');
+    terug.setAttribute('aria-label', 'Terug naar de woorden');
+    terug.onclick = (ev) => { ev.preventDefault(); toonWoorden(); };
+    kop.innerHTML = `<span class="letterfont">${esc(w)}</span>`;
+    inhoud.innerHTML = '';
+    const grid = h('<div style="display:grid; grid-template-columns:1fr 1fr; gap:14px"></div>');
+    const lettersTegel = h(`<button aria-label="De letters van ${esc(w)} oefenen" class="card" style="min-height:140px; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px">
+      <span class="letterfont" style="font-size:36px; line-height:1; color:var(--primary)">${segment(w).join(' ')}</span>
+      <span style="font-size:16px; font-weight:700">Letters</span>
+    </button>`);
+    lettersTegel.addEventListener('click', () => {
+      store.mode = 'solo';
+      store.soloLetters = segment(w);
+      store.progress = {};
+      store.currentLetter = store.soloLetters[0];
+      location.hash = '#watch';
+    });
+    grid.appendChild(lettersTegel);
+    grid.appendChild(h(`<div aria-label="Het woord schrijven, komt binnenkort" class="card" style="min-height:140px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; opacity:.45">
+      ${icon('pencil', 36, 'var(--primary)')}
+      <span style="font-size:16px; font-weight:700">Woord</span>
+    </div>`));
+    grid.appendChild(h('<div aria-label="Meer oefeningen volgen nog" style="min-height:140px; border-radius:24px; border:2px dashed var(--border); display:flex; align-items:center; justify-content:center; color:var(--line); font-size:40px">+</div>'));
+    inhoud.appendChild(grid);
+  }
+
+  toonWoorden();
   return s;
 }
 
@@ -486,7 +529,12 @@ function screenWatch() {
     </div>
   </div>`);
 
-  s.querySelector('#top').replaceWith(lessonTop('#home', 'Terug naar mijn leerpad', 1, verder));
+  const soloWoord = store.mode === 'solo' && store.soloLetters;
+  s.querySelector('#top').replaceWith(lessonTop(
+    soloWoord ? '#oefen' : '#home',
+    soloWoord ? 'Terug naar de oefeningen' : 'Terug naar mijn leerpad',
+    1, verder,
+  ));
 
   // Animatie: alle streken vloeien zonder pauze in elkaar over, met pennetje.
   const svg = s.querySelector('#canvas');
@@ -758,8 +806,11 @@ function screenWrite() {
 
   function goNextLetter() {
     const next = letterList().find((l) => !store.progress[l]);
-    if (next) { store.currentLetter = next; location.hash = '#watch'; }
-    else { store.currentLetter = null; location.hash = '#home'; }
+    if (next) { store.currentLetter = next; location.hash = '#watch'; return; }
+    store.currentLetter = null;
+    // Woordoefening (alleen oefenen) af → terug naar de woordenkeuze.
+    if (store.mode === 'solo' && store.soloLetters) { store.soloLetters = null; location.hash = '#oefen'; }
+    else location.hash = '#home';
   }
 
   // Sterren = het aantal goede (groene) schrijfbeurten.
@@ -791,7 +842,8 @@ function screenWrite() {
       report(letter, 'Klaar', greenCount());
     }
     store.currentLetter = null;
-    location.hash = '#home';
+    if (store.mode === 'solo' && store.soloLetters) { store.soloLetters = null; location.hash = '#oefen'; }
+    else location.hash = '#home';
   });
 
   svg.addEventListener('pointerdown', (ev) => {
