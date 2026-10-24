@@ -177,7 +177,7 @@ function screenStart() {
       <p style="font-size:17px; color:var(--muted)">Leer schrijven, letter per letter.</p>
     </div>
     <div style="padding:36px 20px 0; display:flex; flex-direction:column; gap:14px">
-      <a href="#home" id="solo" aria-label="Alleen oefenen" style="min-height:128px; padding:20px; box-sizing:border-box; border-radius:24px; background:var(--primary); color:#fff; text-decoration:none; display:flex; align-items:center; justify-content:center">
+      <a href="#oefen" id="solo" aria-label="Alleen oefenen" style="min-height:128px; padding:20px; box-sizing:border-box; border-radius:24px; background:var(--primary); color:#fff; text-decoration:none; display:flex; align-items:center; justify-content:center">
         ${personFilled(76, '#fff')}
       </a>
       <a href="#join" aria-label="Aansluiten bij een sessie" style="min-height:128px; padding:20px; box-sizing:border-box; border-radius:24px; background:#fff; border:2px solid var(--border); color:var(--ink); text-decoration:none; display:flex; align-items:center; justify-content:center">
@@ -220,7 +220,7 @@ function screenJoin() {
     </div>
     <div class="bottombar" style="flex-direction:column; gap:8px">
       <button id="go" class="btn primary" aria-label="Aansluiten">${icon('arrow', 30, 'currentColor', 2.5)}</button>
-      <a href="#home" id="solo" style="min-height:48px; display:flex; align-items:center; justify-content:center; font-size:16px">Alleen oefenen</a>
+      <a href="#oefen" id="solo" style="min-height:48px; display:flex; align-items:center; justify-content:center; font-size:16px">Alleen oefenen</a>
     </div>
     <video id="qrvideo" style="display:none"></video>
   </div>`);
@@ -345,6 +345,34 @@ function screenJoin() {
   return s;
 }
 
+/* ---------- alleen oefenen: oefeningen ---------------------------------- */
+// Aparte pagina voor de individuele oefensessie (geen leerpad): een
+// overzicht van oefeningen, verder uit te werken door de lesgever.
+function screenOefen() {
+  const s = h(`<div class="screen">
+    <div class="topbar">
+      <a class="iconbtn" href="#start" aria-label="Terug naar het startscherm">${icon('back')}</a>
+      <span></span>
+    </div>
+    <div style="padding:8px 20px 0">
+      <h1 style="font-size:26px">Oefenen</h1>
+    </div>
+    <div style="padding:18px 20px 0; display:grid; grid-template-columns:1fr 1fr; gap:14px">
+      <a href="#home" aria-label="Letters oefenen" class="card" style="min-height:140px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; text-decoration:none; color:var(--ink)">
+        <span class="letterfont" style="font-size:40px; line-height:1; color:var(--primary)">abc</span>
+        <span style="font-size:16px; font-weight:700">Letters</span>
+      </a>
+      <div aria-label="Woorden oefenen, komt binnenkort" class="card" style="min-height:140px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; opacity:.45">
+        ${icon('pencil', 36, 'var(--primary)')}
+        <span style="font-size:16px; font-weight:700">Woorden</span>
+      </div>
+      <div aria-label="Meer oefeningen volgen nog" style="min-height:140px; border-radius:24px; border:2px dashed var(--border); display:flex; align-items:center; justify-content:center; color:var(--line); font-size:40px">+</div>
+    </div>
+  </div>`);
+  s.querySelector('a[href="#home"]').addEventListener('click', () => { store.mode = 'solo'; });
+  return s;
+}
+
 /* ---------- mijn leerpad ------------------------------------------------ */
 function screenHome() {
   const letters = letterList();
@@ -358,9 +386,12 @@ function screenHome() {
 
   const s = h(`<div class="screen">
     <div class="topbar" style="padding:20px 20px 12px">
-      <div style="display:flex; flex-direction:column">
-        <span style="font-size:20px; font-weight:700">${title}</span>
-        <span style="font-size:14px; color:${inSession ? 'var(--green-ink)' : 'var(--muted)'}; display:flex; align-items:center; gap:4px">${sub}</span>
+      <div style="display:flex; align-items:center; gap:12px">
+        ${inSession ? '' : `<a class="iconbtn" href="#oefen" aria-label="Terug naar de oefeningen">${icon('back')}</a>`}
+        <div style="display:flex; flex-direction:column">
+          <span style="font-size:20px; font-weight:700">${title}</span>
+          <span style="font-size:14px; color:${inSession ? 'var(--green-ink)' : 'var(--muted)'}; display:flex; align-items:center; gap:4px">${sub}</span>
+        </div>
       </div>
       <span id="spk"></span>
     </div>
@@ -375,12 +406,12 @@ function screenHome() {
       <span style="font-size:18px; font-weight:700">Alles geoefend! Tik op een letter om te herhalen.</span>
     </div>`}
     <div style="padding:24px 20px 8px; display:flex; align-items:baseline; justify-content:space-between">
-      <h1 style="font-size:20px">Mijn leerpad</h1>
+      <h1 style="font-size:20px">${inSession ? 'Mijn leerpad' : 'Letters'}</h1>
       <span style="font-size:15px; color:var(--muted)">${doneCount} van ${letters.length} letters</span>
     </div>
     <div id="list" style="flex-grow:1; padding:4px 20px 16px; display:flex; flex-direction:column; gap:10px"></div>
     <nav class="navbar" style="grid-template-columns:repeat(3, minmax(0,1fr))">
-      <a href="#home" class="current">${icon('path')} Leerpad</a>
+      <a href="#home" class="current">${icon('path')} ${inSession ? 'Leerpad' : 'Letters'}</a>
       <button id="navwords" style="opacity:.45">${icon('pencil')} Woorden</button>
       <a href="${inSession ? '#home' : '#join'}" id="navses" ${inSession ? 'class="current"' : ''}>${icon('users')} Sessie</a>
     </nav>
@@ -433,7 +464,9 @@ function screenWatch() {
   const vbW = Math.max(350, def.w + 80);
   let speed = 130; // eenheden per seconde
 
-  const hear = h('<span style="width:48px"></span>');
+  // Kleine blauwe verder-knop rechtsboven: zo blijft onderaan ruimte vrij
+  // en kan de letter groter in beeld.
+  const verder = h(`<a href="#trace" class="iconbtn" aria-label="Nu jij: zelf overtrekken" style="background:var(--primary); color:#fff">${icon('arrow', 26, 'currentColor', 2.5)}</a>`);
   const s = h(`<div class="screen">
     <div id="top"></div>
     ${refWord(letter)}
@@ -447,16 +480,13 @@ function screenWatch() {
         </g>
       </svg>
     </div>
-    <div style="padding:16px 20px 0; display:flex; justify-content:center; gap:12px">
+    <div style="padding:16px 20px 28px; display:flex; justify-content:center; gap:12px">
       <button id="again" class="btn ghost small">${icon('redo', 20)} Opnieuw</button>
       <button id="slower" class="chip" style="min-height:52px; border-radius:26px; padding:0 22px; font-weight:700; font-size:16px">${icon('slow', 20)} Trager</button>
     </div>
-    <div class="bottombar">
-      <a href="#trace" class="btn primary" aria-label="Nu jij: zelf overtrekken" style="flex-grow:1">${icon('arrow', 30, 'currentColor', 2.5)}</a>
-    </div>
   </div>`);
 
-  s.querySelector('#top').replaceWith(lessonTop('#home', 'Terug naar mijn leerpad', 1, hear));
+  s.querySelector('#top').replaceWith(lessonTop('#home', 'Terug naar mijn leerpad', 1, verder));
 
   // Animatie: alle streken vloeien zonder pauze in elkaar over, met pennetje.
   const svg = s.querySelector('#canvas');
@@ -534,7 +564,8 @@ function screenTrace() {
   let tracer = new Tracer(letter);
   let drawing = false;
 
-  const spacer = h('<span style="width:48px"></span>');
+  // Verder-knop klein rechtsboven; ontgrendelt na de eerste poging.
+  const nextBtn = h(`<a href="#write" id="next" class="iconbtn" aria-label="Verder naar schrijven" style="background:var(--primary); color:#fff; opacity:.45; pointer-events:none">${icon('arrow', 26, 'currentColor', 2.5)}</a>`);
   const s = h(`<div class="screen">
     <div id="top"></div>
     ${refWord(letter)}
@@ -548,14 +579,11 @@ function screenTrace() {
         </g>
       </svg>
     </div>
-    <div class="card" style="margin:16px 20px 0; padding:14px 16px; display:flex; align-items:center; justify-content:center">
+    <div class="card" style="margin:16px 20px 24px; padding:14px 16px; display:flex; align-items:center; justify-content:center">
       <div id="chips" style="display:flex; gap:10px"></div>
     </div>
-    <div class="bottombar">
-      <a href="#write" id="next" class="btn primary" aria-label="Verder naar schrijven" style="flex-grow:1; opacity:.45; pointer-events:none">${icon('arrow', 30, 'currentColor', 2.5)}</a>
-    </div>
   </div>`);
-  s.querySelector('#top').replaceWith(lessonTop('#watch', 'Terug naar kijken', 2, spacer));
+  s.querySelector('#top').replaceWith(lessonTop('#watch', 'Terug naar kijken', 2, nextBtn));
 
   const svg = s.querySelector('#canvas');
   const letterG = s.querySelector('#letter');
@@ -607,7 +635,6 @@ function screenTrace() {
   }
   updateChips();
 
-  const nextBtn = s.querySelector('#next');
   function unlockNext() { nextBtn.style.opacity = '1'; nextBtn.style.pointerEvents = 'auto'; }
 
   function resetAttempt() {
@@ -667,7 +694,8 @@ function screenWrite() {
   let drawing = false;
   let rawInk = []; // eigen pen-spoor van deze beurt
 
-  const spacer = h('<span style="width:48px"></span>');
+  // Klaar-knop klein rechtsboven.
+  const doneBtn = h(`<button class="iconbtn" aria-label="Klaar, terug naar mijn leerpad" style="background:var(--primary); color:#fff">${icon('check', 26, 'currentColor', 2.5)}</button>`);
   const s = h(`<div class="screen">
     <div id="top"></div>
     ${refWord(letter)}
@@ -677,14 +705,11 @@ function screenWrite() {
         <g id="slot" transform="${letterTransform(vbW, def.w, store.slant)}"></g>
       </svg>
     </div>
-    <div class="card" style="margin:16px 20px 0; padding:14px 16px; display:flex; align-items:center; justify-content:center">
+    <div class="card" style="margin:16px 20px 24px; padding:14px 16px; display:flex; align-items:center; justify-content:center">
       <div id="chips" style="display:flex; gap:10px"></div>
     </div>
-    <div class="bottombar">
-      <button id="done" class="btn primary" aria-label="Klaar, terug naar mijn leerpad" style="flex-grow:1">${icon('check', 30, 'currentColor', 2.5)}</button>
-    </div>
   </div>`);
-  s.querySelector('#top').replaceWith(lessonTop('#trace', 'Terug naar overtrekken', 3, spacer));
+  s.querySelector('#top').replaceWith(lessonTop('#trace', 'Terug naar overtrekken', 3, doneBtn));
 
   const svg = s.querySelector('#canvas');
   const slotG = s.querySelector('#slot');
@@ -760,7 +785,7 @@ function screenWrite() {
 
   // Klaar-knop: rondt de letter af en keert terug naar mijn leerpad.
   // Wie vroeger stopt, krijgt evenveel sterren als er blokjes groen zijn.
-  s.querySelector('#done').addEventListener('click', () => {
+  doneBtn.addEventListener('click', () => {
     if (!store.progress[letter]) {
       store.progress[letter] = { stars: greenCount() };
       report(letter, 'Klaar', greenCount());
@@ -1137,7 +1162,7 @@ function screenTeacher() {
 
 /* ---------- router ------------------------------------------------------ */
 const routes = {
-  start: screenStart, join: screenJoin, home: screenHome,
+  start: screenStart, join: screenJoin, oefen: screenOefen, home: screenHome,
   watch: screenWatch, trace: screenTrace, write: screenWrite, teacher: screenTeacher,
 };
 
