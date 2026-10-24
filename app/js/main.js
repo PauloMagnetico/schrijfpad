@@ -477,10 +477,9 @@ function screenHome() {
       <span style="font-size:15px; color:var(--muted)">${doneCount} van ${letters.length} letters</span>
     </div>
     <div id="list" style="flex-grow:1; padding:4px 20px 16px; display:flex; flex-direction:column; gap:10px"></div>
-    <nav class="navbar" style="grid-template-columns:repeat(3, minmax(0,1fr))">
-      <a href="#home" class="current">${icon('path')} ${inSession ? 'Leerpad' : 'Letters'}</a>
+    <nav class="navbar" style="grid-template-columns:repeat(2, minmax(0,1fr))">
+      <a href="#home" class="current">${icon('path')} Letterpad</a>
       <button id="navwords" style="opacity:.45">${icon('pencil')} Woorden</button>
-      <a href="${inSession ? '#home' : '#join'}" id="navses" ${inSession ? 'class="current"' : ''}>${icon('users')} Sessie</a>
     </nav>
   </div>`);
 
