@@ -90,6 +90,7 @@ function icon(name, size = 24, color = 'currentColor', sw = 2) {
     zon: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
     blad: '<path d="M5 19C5 10 10 5 20 4c0 10-5 15-14 15z"/><path d="M5 19 13 11"/>',
     ster: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
+    lamp: '<path d="M12 3a6 6 0 0 1 3.9 10.6c-.7.6-.9 1.4-.9 2.4h-6c0-1-.2-1.8-.9-2.4A6 6 0 0 1 12 3z"/><path d="M9.5 19h5"/><path d="M10.5 22h3"/>',
     maan: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
     bloem: '<circle cx="12" cy="12" r="3"/><path d="M12 9a3 3 0 1 0-3-3 3 3 0 1 0-3 3 3 3 0 1 0 3 3 3 3 0 1 0 3 3 3 3 0 1 0 3-3 3 3 0 1 0 3-3 3 3 0 1 0-3-3 3 3 0 0 0-3 3"/>',
     wolk: '<path d="M17.5 19a4.5 4.5 0 0 0 0-9 6 6 0 0 0-11.5 2A4 4 0 0 0 7 19z"/>',
@@ -509,7 +510,7 @@ function screenOefenType() {
         <span style="font-size:16px; font-weight:700">Leerpad</span>
       </button>
       <button id="geheugen" aria-label="Geheugenoefening: schrijf de letters na elkaar uit het hoofd" class="card" style="min-height:140px; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:12px">
-        ${icon('ster', 32, 'var(--orange)')}
+        ${icon('lamp', 32, 'var(--orange)')}
         <span style="font-size:16px; font-weight:700">Geheugen</span>
       </button>
       <div aria-label="Meer oefeningen volgen nog" style="min-height:140px; border-radius:24px; border:2px dashed var(--border); display:flex; align-items:center; justify-content:center; color:var(--line); font-size:40px">+</div>
