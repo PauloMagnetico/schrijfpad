@@ -452,7 +452,7 @@ function screenWatch() {
 
   s.querySelector('#top').replaceWith(lessonTop('#home', 'Terug naar mijn leerpad', 1, hear));
 
-  // Animatie: streek per streek, met pennetje.
+  // Animatie: alle streken vloeien zonder pauze in elkaar over, met pennetje.
   const svg = s.querySelector('#canvas');
   const inkG = s.querySelector('#ink');
   const markerG = s.querySelector('#marker');
@@ -475,7 +475,7 @@ function screenWatch() {
       p.style.strokeDashoffset = len;
       return { p, len, dot: !!st.dot };
     });
-    let i = 0, t0 = null, pause = 0;
+    let i = 0, t0 = null;
     markerG.innerHTML = startDotMarkup(letter, 0, false);
     const pen = h(`<svg><circle r="9" fill="#C25E00" stroke="#fff" stroke-width="3"/></svg>`).firstElementChild;
     function frame(ts) {
@@ -485,14 +485,20 @@ function screenWatch() {
         return;
       }
       const st = strokes[i];
-      if (t0 === null) { t0 = ts + pause; markerG.innerHTML = startDotMarkup(letter, i, false); markerG.appendChild(pen); }
+      if (t0 === null) { t0 = ts; markerG.innerHTML = startDotMarkup(letter, i, false); markerG.appendChild(pen); }
       const el = (ts - t0) / 1000;
       const dist = Math.max(0, el) * speed;
       const done = Math.min(st.len, dist);
       st.p.style.strokeDashoffset = st.len - done;
       const pt = st.p.getPointAtLength(done);
       pen.setAttribute('cx', pt.x); pen.setAttribute('cy', pt.y);
-      if (done >= st.len) { i++; t0 = null; pause = 350; }
+      if (done >= st.len) {
+        // Meteen door met de volgende streek: de rest van deze beeldtijd
+        // telt al mee, zo loopt de beweging vloeiend door de penliften heen.
+        i++;
+        t0 = done < dist && st.len > 0 ? ts - ((dist - st.len) / speed) * 1000 : null;
+        if (i < strokes.length && t0 !== null) { markerG.innerHTML = startDotMarkup(letter, i, false); markerG.appendChild(pen); }
+      }
       store.anim = requestAnimationFrame(frame);
     }
     store.anim = requestAnimationFrame(frame);
@@ -531,12 +537,6 @@ function screenTrace() {
         </g>
       </svg>
     </div>
-    <div id="fb" class="feedback idle" role="status">
-      <span id="fbicon">${icon('checkcircle', 28, 'var(--green-ink)', 2.2)}</span>
-      <div style="display:flex; flex-direction:column; gap:2px">
-        <span class="fb-title" id="fbtitle">Begin bij het oranje bolletje</span>
-      </div>
-    </div>
     <div class="card" style="margin:16px 20px 0; padding:14px 16px; display:flex; align-items:center; justify-content:space-between">
       <span style="font-size:15px; color:var(--muted)">Probeer 3 keer</span>
       <div id="chips" style="display:flex; gap:10px"></div>
@@ -551,15 +551,6 @@ function screenTrace() {
   const letterG = s.querySelector('#letter');
   const inkG = s.querySelector('#ink');
   const markerG = s.querySelector('#marker');
-  const fb = s.querySelector('#fb');
-  const fbtitle = s.querySelector('#fbtitle');
-  const fbicon = s.querySelector('#fbicon');
-
-  function setFb(kind, title) {
-    fb.className = `feedback ${kind}`;
-    fbtitle.textContent = title;
-    fbicon.innerHTML = kind === 'good' ? icon('checkcircle', 28, 'var(--green-ink)', 2.2) : icon('redo', 26, 'var(--orange-ink)', 2.2);
-  }
 
   // Groene inkt: het model wordt onthuld tot waar de leerling zit.
   const inkPaths = def.strokes.map((st) => {
@@ -592,13 +583,16 @@ function screenTrace() {
   function updateChips() {
     chips.innerHTML = '';
     for (let i = 0; i < 3; i++) {
-      const st = attempts[i] !== undefined ? 'done' : i === attempts.length ? 'now' : 'later';
+      // Een zwakke poging (1 ster) kleurt oranje, een goede groen.
+      const st = attempts[i] !== undefined ? (attempts[i] > 1 ? 'done' : 'weak') : i === attempts.length ? 'now' : 'later';
       const css = {
         done: 'background:var(--green-bg); color:var(--green-ink)',
+        weak: 'background:var(--orange-bg); color:var(--orange-ink)',
         now: 'border:2px solid var(--primary); box-sizing:border-box; color:var(--primary); background:#fff',
         later: 'background:var(--neutral); color:var(--muted)',
       }[st];
-      chips.appendChild(h(`<span class="letterfont" aria-label="Poging ${i + 1}" style="width:44px; height:44px; border-radius:12px; ${css}; font-size:${letter.length > 1 ? 20 : 28}px; display:flex; align-items:center; justify-content:center">${letter}</span>`));
+      const label = st === 'weak' ? `Poging ${i + 1}: niet goed` : st === 'done' ? `Poging ${i + 1}: goed` : `Poging ${i + 1}`;
+      chips.appendChild(h(`<span class="letterfont" aria-label="${label}" style="width:44px; height:44px; border-radius:12px; ${css}; font-size:${letter.length > 1 ? 20 : 28}px; display:flex; align-items:center; justify-content:center">${letter}</span>`));
     }
   }
   updateChips();
@@ -610,15 +604,12 @@ function screenTrace() {
     tracer = new Tracer(letter);
     drawing = false;
     updateInk();
-    setFb('idle', 'Begin bij het oranje bolletje');
   }
 
   function finishAttempt() {
     const stars = tracer.stars();
     attempts.push(stars);
     updateChips();
-    const txt = stars === 3 ? 'Heel goed! Drie sterren.' : stars === 2 ? 'Goed, maar het kan netter.' : 'Dat kan beter.';
-    setFb(stars > 1 ? 'good' : 'hint', txt);
     unlockNext();
     const best = Math.max(...attempts);
     report(letter, `Overtrekken · ${letter}`, best);
@@ -635,19 +626,12 @@ function screenTrace() {
     svg.setPointerCapture(ev.pointerId);
     const p = svgPoint(svg, letterG, ev);
     const r = tracer.beginStroke(p);
-    if (r === 'wrongStart') {
-      setFb('hint', 'Begin bij het oranje bolletje');
-    } else {
-      drawing = true;
-      setFb('idle', 'Volg de grijze letter');
-    }
+    if (r !== 'wrongStart') drawing = true;
     updateInk();
   });
   svg.addEventListener('pointermove', (ev) => {
     if (!drawing) return;
-    const r = tracer.move(svgPoint(svg, letterG, ev));
-    if (r === 'offPath') setFb('hint', 'Blijf bij de lijn');
-    else if (r === 'backwards') setFb('hint', 'Andere kant op');
+    tracer.move(svgPoint(svg, letterG, ev));
     updateInk();
   });
   svg.addEventListener('pointerup', () => {
@@ -655,8 +639,8 @@ function screenTrace() {
     drawing = false;
     const r = tracer.endStroke();
     if (r === 'done-letter') { updateInk(); finishAttempt(); }
-    else if (r === 'done-stroke') { setFb('idle', 'Nu het volgende deel'); updateInk(); }
-    else { setFb('hint', 'Bijna! Nog eens vanaf het bolletje'); tracer.progress = 0; updateInk(); }
+    else if (r === 'done-stroke') { updateInk(); }
+    else { tracer.progress = 0; updateInk(); }
   });
 
   report(letter, `Overtrekken · ${letter}`);
@@ -684,32 +668,18 @@ function screenWrite() {
         <g id="slot" transform="${letterTransform(vbW, def.w, store.slant)}"></g>
       </svg>
     </div>
-    <div id="fb" class="feedback idle" role="status">
-      <span id="fbicon">${icon('checkcircle', 28, 'var(--green-ink)', 2.2)}</span>
-      <div style="display:flex; flex-direction:column; gap:2px">
-        <span class="fb-title" id="fbtitle">Schrijf de letter</span>
-      </div>
-    </div>
     <div class="card" style="margin:16px 20px 0; padding:14px 16px; display:flex; align-items:center; justify-content:space-between">
       <span style="font-size:15px; color:var(--muted)">Probeer 3 keer</span>
       <div id="chips" style="display:flex; gap:10px"></div>
     </div>
     <div class="bottombar">
-      <button id="erase" class="iconbtn" style="width:60px; height:60px; border-radius:30px; border:2px solid var(--border)" aria-label="Uitvegen en opnieuw beginnen">${icon('eraser')}</button>
+      <button id="done" class="btn primary" aria-label="Klaar, naar de volgende letter" style="flex-grow:1">${icon('check', 30, 'currentColor', 2.5)}</button>
     </div>
   </div>`);
   s.querySelector('#top').replaceWith(lessonTop('#trace', 'Terug naar overtrekken', 3, spacer));
 
   const svg = s.querySelector('#canvas');
   const slotG = s.querySelector('#slot');
-  const fb = s.querySelector('#fb');
-  const fbtitle = s.querySelector('#fbtitle');
-  const fbicon = s.querySelector('#fbicon');
-  function setFb(kind, title) {
-    fb.className = 'feedback ' + kind;
-    fbtitle.textContent = title;
-    fbicon.innerHTML = kind === 'hint' ? icon('redo', 26, 'var(--orange-ink)', 2.2) : icon('checkcircle', 28, 'var(--green-ink)', 2.2);
-  }
 
   function renderSlot() {
     let inner = '';
@@ -729,16 +699,19 @@ function screenWrite() {
   }
 
   const chips = s.querySelector('#chips');
-  function updateChips() {
+  function updateChips(failedNow) {
     chips.innerHTML = '';
     for (let i = 0; i < 3; i++) {
-      const st = i < attempts.length ? 'done' : i === attempts.length ? 'now' : 'later';
+      // De lopende beurt kleurt oranje wanneer hij niet goed genoeg was.
+      const st = i < attempts.length ? 'done' : i === attempts.length ? (failedNow ? 'weak' : 'now') : 'later';
       const css = {
         done: 'background:var(--green-bg); color:var(--green-ink)',
+        weak: 'background:var(--orange-bg); color:var(--orange-ink)',
         now: 'border:2px solid var(--primary); box-sizing:border-box; color:var(--primary); background:#fff',
         later: 'background:var(--neutral); color:var(--muted)',
       }[st];
-      chips.appendChild(h(`<span class="letterfont" aria-label="Keer ${i + 1}" style="width:44px; height:44px; border-radius:12px; ${css}; font-size:${letter.length > 1 ? 20 : 28}px; display:flex; align-items:center; justify-content:center">${letter}</span>`));
+      const label = st === 'weak' ? `Keer ${i + 1}: niet goed, probeer opnieuw` : st === 'done' ? `Keer ${i + 1}: goed` : `Keer ${i + 1}`;
+      chips.appendChild(h(`<span class="letterfont" aria-label="${label}" style="width:44px; height:44px; border-radius:12px; ${css}; font-size:${letter.length > 1 ? 20 : 28}px; display:flex; align-items:center; justify-content:center">${letter}</span>`));
     }
   }
 
@@ -747,7 +720,13 @@ function screenWrite() {
     tracer = new Tracer(letter, { tolerance: 52, startRadius: 56 });
     drawing = false;
     renderSlot();
-    setFb('idle', 'Schrijf de letter');
+    updateChips();
+  }
+
+  function goNextLetter() {
+    const next = letterList().find((l) => !store.progress[l]);
+    if (next) { store.currentLetter = next; location.hash = '#watch'; }
+    else { store.currentLetter = null; location.hash = '#home'; }
   }
 
   function finishAttempt() {
@@ -755,30 +734,34 @@ function screenWrite() {
     // Even de grijze vorm over de eigen letter: zo zie je zelf hoe het ging.
     slotG.insertAdjacentHTML('beforeend', `<g class="ghost">${strokePaths(letter, (st) => `stroke="#C7CFDD" stroke-width="${st.dot ? 18 : 26}" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"`)}</g>`);
     if (stars < 2) {
-      // Strenge lat: een slordige letter telt niet mee.
-      setFb('hint', 'Nog niet goed. Probeer opnieuw.');
+      // Strenge lat: een slordige letter telt niet mee; het blokje kleurt oranje.
+      updateChips(true);
       setTimeout(nextAttempt, 1600);
       return;
     }
     attempts.push(stars);
     updateChips();
     if (attempts.length >= 3) {
-      setFb('good', 'Klaar!');
       const starsBest = store.traceStars || 1;
       store.progress[letter] = { stars: starsBest };
       report(letter, 'Klaar', starsBest);
       // Automatisch door naar de volgende letter; pas terug naar het
       // leerpad wanneer alles af is.
-      const next = letterList().find((l) => !store.progress[l]);
-      setTimeout(() => {
-        if (next) { store.currentLetter = next; location.hash = '#watch'; }
-        else { store.currentLetter = null; location.hash = '#home'; }
-      }, 1600);
+      setTimeout(goNextLetter, 1600);
     } else {
-      setFb('good', stars === 3 ? 'Heel goed!' : 'Goed.');
       setTimeout(nextAttempt, 1600);
     }
   }
+
+  // Klaar-knop: meteen door naar de volgende letter.
+  s.querySelector('#done').addEventListener('click', () => {
+    if (!store.progress[letter]) {
+      const starsBest = store.traceStars || 0;
+      store.progress[letter] = { stars: starsBest };
+      report(letter, 'Klaar', starsBest);
+    }
+    goNextLetter();
+  });
 
   svg.addEventListener('pointerdown', (ev) => {
     if (attempts.length >= 3) return;
@@ -787,7 +770,6 @@ function screenWrite() {
     const r = tracer.beginStroke(p);
     if (r === 'wrongStart') {
       // Na een misser tonen we het startpunt ook zonder hulp.
-      setFb('hint', 'Begin bij het bolletje');
       if (help === 'none') {
         const old = slotG.querySelector('.hintdot');
         if (old) old.remove();
@@ -803,25 +785,18 @@ function screenWrite() {
     const p = svgPoint(svg, slotG, ev);
     rawInk[rawInk.length - 1].push(p);
     updateRawInk();
-    const r = tracer.move(p);
-    if (r === 'backwards') setFb('hint', 'Andere kant op');
+    tracer.move(p);
   });
   svg.addEventListener('pointerup', () => {
     if (!drawing) return;
     drawing = false;
     const r = tracer.endStroke();
     if (r === 'done-letter') finishAttempt();
-    else if (r === 'done-stroke') { setFb('good', 'Goed zo!'); renderSlot(); }
+    else if (r === 'done-stroke') renderSlot();
     else {
-      setFb('hint', 'Probeer nog eens');
       rawInk.pop();
       updateRawInk();
     }
-  });
-
-  s.querySelector('#erase').addEventListener('click', () => {
-    if (attempts.length >= 3) return;
-    nextAttempt();
   });
 
   renderSlot();
