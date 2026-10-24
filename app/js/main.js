@@ -971,20 +971,18 @@ function screenWrite() {
 
   const soloOefening = () => store.mode === 'solo' && store.soloLetters;
   function goNextLetter() {
-    const next = letterList().find((l) => !store.progress[l]);
-    if (next) {
-      store.currentLetter = next;
-      // Geheugenvorm: meteen schrijven, zonder kijken en overtrekken.
-      location.hash = soloOefening() && store.soloVorm === 'geheugen' ? '#write' : '#watch';
+    // Geheugenvorm: de rij meteen verder afwerken, zonder tussenstop.
+    if (soloOefening() && store.soloVorm === 'geheugen') {
+      const next = letterList().find((l) => !store.progress[l]);
+      if (next) { store.currentLetter = next; location.hash = '#write'; return; }
+      store.soloLetters = null;
+      store.currentLetter = null;
+      location.hash = '#oefen';
       return;
     }
+    // Letter afgerond: terug naar het leerpad; daar staat de volgende klaar.
     store.currentLetter = null;
-    if (soloOefening()) {
-      // Leerpad: terug naar het eigen leerpadoverzicht (alles groen);
-      // geheugen: terug naar de keuzepagina.
-      if (store.soloVorm === 'leerpad') location.hash = '#home';
-      else { store.soloLetters = null; location.hash = '#oefen'; }
-    } else location.hash = '#home';
+    location.hash = '#home';
   }
 
   // Sterren = het aantal goede (groene) schrijfbeurten.
@@ -1259,7 +1257,7 @@ function screenTeacher() {
       rowsEl.appendChild(h(`<div style="display:grid; grid-template-columns:2fr 1.5fr 1fr; gap:12px; align-items:center; padding:10px 12px; border-top:1px solid #E3E8F0; font-size:16px; ${l.connected ? '' : 'opacity:.45'}">
         <span style="display:flex; align-items:center; gap:10px"><span style="width:32px; height:32px; border-radius:16px; background:${bg}; flex-shrink:0"></span>${esc(l.name)}${l.connected ? '' : ' (weg)'}</span>
         <span style="color:${klaar ? 'var(--green-ink)' : 'var(--ink)'}; font-weight:${klaar ? 700 : 400}">${klaar ? 'Klaar ✓' : esc(l.step || '—')}</span>
-        <span style="color:var(--green-ink); font-weight:700">${l.stars ? '★'.repeat(l.stars) : '–'}</span>
+        <span style="color:var(--green-ink); font-weight:700">${l.lastStars === undefined ? '–' : '★'.repeat(l.lastStars) + '☆'.repeat(3 - l.lastStars)}</span>
       </div>`));
     });
   }
@@ -1300,11 +1298,13 @@ function screenTeacher() {
     const l = state.learners.get(msg.id);
     if (!l) return;
     l.step = msg.step;
-    if (msg.stars) l.stars = Math.max(l.stars || 0, msg.stars);
-    // Per letter het beste resultaat bewaren, voor het pdf-rapport.
-    if (msg.letter && msg.stars) {
+    // Alleen het eindresultaat van een afgeronde letter telt (sterren =
+    // groene schrijfblokjes); tussenstanden van kijken/overtrekken niet.
+    // Ook 0 sterren is een effectief resultaat.
+    if (msg.step === 'Klaar' && msg.letter) {
       l.results = l.results || {};
-      l.results[msg.letter] = Math.max(l.results[msg.letter] || 0, msg.stars);
+      l.results[msg.letter] = msg.stars || 0;
+      l.lastStars = msg.stars || 0;
     }
     renderRows();
   });
