@@ -14,7 +14,7 @@
 <script type="module" src="js/main.js"></script>
 <script type="module">
 import { LETTERS } from './js/letters.js';
-import { samplePath } from './js/engine.js';
+import { bewegingen } from './js/engine.js';
 
 Element.prototype.setPointerCapture = () => {};
 const out = [];
@@ -32,12 +32,11 @@ function clientPt(g, x, y) {
   p.x = x; p.y = y;
   return p.matrixTransform(g.getScreenCTM());
 }
-// Volg één streek met synthetische pointer-events; jitter bootst een echte
-// vinger na (minder events, trillend, net niet op het beginpunt).
+// Volg één vloeiende schrijfbeweging met synthetische pointer-events; jitter
+// bootst een echte vinger na (minder events, trillend, net niet op het beginpunt).
 let JITTER = 0;
 function rnd(n) { return (Math.random() * 2 - 1) * n; }
-async function traceStroke(svg, g, d) {
-  const { pts } = samplePath(d);
+async function traceStroke(svg, g, pts) {
   const step = JITTER ? 3 : 1; // echte vinger: ~12 eenheden tussen events
   const c0 = clientPt(g, pts[0][0] + rnd(JITTER * 2), pts[0][1] + rnd(JITTER * 2));
   fire(svg, 'pointerdown', c0.x, c0.y);
@@ -60,9 +59,8 @@ async function testTraceScreen(letter) {
   await wait(120);
   const svg = document.querySelector('#canvas');
   const g = document.querySelector('#letter');
-  const def = LETTERS[letter];
   for (let round = 0; round < 3; round++) {
-    for (const s of def.strokes) await traceStroke(svg, g, s.d);
+    for (const grp of bewegingen(letter)) await traceStroke(svg, g, grp.pts);
     await wait(1100); // resetAttempt-timeout
   }
   const fb = document.querySelector('#fbtitle');
@@ -78,11 +76,10 @@ async function testWriteScreen(letter) {
   await wait(150);
   const svg = document.querySelector('#canvas');
   const g = document.querySelector('#slot');
-  const def = LETTERS[letter];
   // Vaste drie beurten: elke beurt telt (goed of niet). De marge tot 6
   // rondes blijft als vangnet voor het geval de flow ooit verandert.
   for (let round = 0; round < 6 && !window.__lp.progress[letter]; round++) {
-    for (const s of def.strokes) await traceStroke(svg, g, s.d);
+    for (const grp of bewegingen(letter)) await traceStroke(svg, g, grp.pts);
     await wait(1700); // ghost-overlay + automatische overgang
   }
   await wait(200);

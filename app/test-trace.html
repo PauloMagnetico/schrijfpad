@@ -5,27 +5,30 @@
 <pre id="out"></pre>
 <script type="module">
 import { LETTERS } from './js/letters.js';
-import { Tracer, samplePath } from './js/engine.js';
+import { Tracer, bewegingen } from './js/engine.js';
 
 const results = [];
-for (const [letter, def] of Object.entries(LETTERS)) {
+for (const letter of Object.keys(LETTERS)) {
+  // Een perfecte leerling schrijft per vloeiende beweging: pen pas van het
+  // blad aan het eind van een beweging (i-punt, t-streep, volgende deelletter).
+  const groups = bewegingen(letter);
   for (const params of [{ name: 'trace' }, { name: 'write', tolerance: 40, startRadius: 46 }]) {
     const tr = new Tracer(letter, params);
     const log = [];
     let ok = true;
-    for (let si = 0; si < def.strokes.length; si++) {
-      const { pts } = samplePath(def.strokes[si].d);
+    for (let gi = 0; gi < groups.length; gi++) {
+      const pts = groups[gi].pts;
       const b = tr.beginStroke(pts[0]);
-      if (b !== 'ok') { log.push(`stroke ${si}: begin=${b}`); ok = false; break; }
+      if (b !== 'ok') { log.push(`beweging ${gi}: begin=${b}`); ok = false; break; }
       if (!tr.isDot) {
         for (const p of pts) {
           const m = tr.move(p);
-          if (m !== 'ok') log.push(`stroke ${si}: move=${m} at ${p.map((n) => n.toFixed(0))}`);
+          if (m !== 'ok') log.push(`beweging ${gi}: move=${m} at ${p.map((n) => n.toFixed(0))}`);
         }
       }
       const e = tr.endStroke();
-      const expected = si === def.strokes.length - 1 ? 'done-letter' : 'done-stroke';
-      if (e !== expected) { log.push(`stroke ${si}: end=${e}, verwacht ${expected} (progress ${(tr.fractionDone() * 100).toFixed(0)}%)`); ok = false; break; }
+      const expected = gi === groups.length - 1 ? 'done-letter' : 'done-stroke';
+      if (e !== expected) { log.push(`beweging ${gi}: end=${e}, verwacht ${expected} (progress ${(tr.fractionDone() * 100).toFixed(0)}%)`); ok = false; break; }
     }
     if (!ok || log.length) results.push({ letter, mode: params.name, ok, stars: ok ? tr.stars() : 0, log });
   }

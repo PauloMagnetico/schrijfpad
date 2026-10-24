@@ -46,7 +46,33 @@ function dist(a, b) {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
-/* Eén poging op één letter volgen.
+/* Groepeer de streken van een letter in vloeiende schrijfbewegingen: sluit
+ * een streek aan op het eind van de vorige, dan blijft de pen op het blad
+ * en vormen ze samen één beweging. Echte penliften blijven aparte groepen:
+ * het puntje van de i/j, de streep van de t/f, en elke volgende deelletter
+ * van een klank (newLetter). */
+export function bewegingen(letter) {
+  const strokes = LETTERS[letter].strokes;
+  const groups = [];
+  let g = null;
+  strokes.forEach((s, i) => {
+    const pts = samplePath(s.d).pts;
+    const sluitAan = g && !g.dot && !s.dot && !s.newLetter
+      && dist(pts[0], g.pts[g.pts.length - 1]) <= 3;
+    if (!sluitAan) {
+      g = { dot: !!s.dot, pts: [], members: [] };
+      groups.push(g);
+    }
+    const from = g.pts.length ? 1 : 0; // gedeeld hoekpunt niet dubbel
+    const startIdx = g.pts.length ? g.pts.length - 1 : 0;
+    for (let k = from; k < pts.length; k++) g.pts.push(pts[k]);
+    g.members.push({ stroke: i, from: startIdx, to: g.pts.length - 1 });
+  });
+  return groups;
+}
+
+/* Eén poging op één letter volgen. De eenheid is de schrijfbeweging (zie
+ * bewegingen); de pen mag alleen van het blad tussen twee bewegingen.
  *
  * new Tracer(letter, { tolerance, startRadius })
  *   .beginStroke(pt)  → 'ok' | 'wrongStart'
@@ -60,23 +86,33 @@ export class Tracer {
     this.def = LETTERS[letter];
     this.tol = opts.tolerance || 30;
     this.startRadius = opts.startRadius || 34;
-    this.strokeIndex = 0;
+    this.groups = bewegingen(letter);
+    this.groupIndex = 0;
     this.errors = { start: 0, direction: 0, offPath: 0, resets: 0 };
-    this._loadStroke();
+    this._loadGroup();
   }
 
-  _loadStroke() {
-    const s = this.def.strokes[this.strokeIndex];
-    this.isDot = !!s.dot;
-    this.samples = samplePath(s.d);
+  _loadGroup() {
+    const g = this.groups[this.groupIndex];
+    this.isDot = g ? g.dot : false;
+    this.samples = { pts: g ? g.pts : [] };
     this.progress = 0;        // index in samples.pts tot waar al gevolgd is
     this.active = false;
     this._off = false;        // zijn we nu naast het pad?
   }
 
-  get currentStroke() { return this.def.strokes[this.strokeIndex]; }
   get startPoint() { return this.samples.pts[0]; }
-  get done() { return this.strokeIndex >= this.def.strokes.length; }
+  get done() { return this.groupIndex >= this.groups.length; }
+
+  // In welke streek van de letter zit de pen nu? (voor inktlaag en startbolletje)
+  _member() {
+    const g = this.groups[this.groupIndex];
+    return g.members.find((m) => this.progress <= m.to) || g.members[g.members.length - 1];
+  }
+  get strokeIndex() {
+    if (this.done) return this.def.strokes.length;
+    return this._member().stroke;
+  }
 
   beginStroke(p) {
     if (this.done) return 'ok';
@@ -147,11 +183,12 @@ export class Tracer {
     if (!this.active) return 'tooShort';
     this.active = false;
     if (this.isDot || this.progress >= (this.samples.pts.length - 1) * 0.9) {
-      this.strokeIndex++;
+      this.groupIndex++;
       if (this.done) return 'done-letter';
-      this._loadStroke();
+      this._loadGroup();
       return 'done-stroke';
     }
+    // Te vroeg van het blad: de hele beweging opnieuw, vloeiend.
     this.errors.resets++;
     this.progress = 0;
     return 'tooShort';
@@ -160,7 +197,10 @@ export class Tracer {
   // Hoe ver in de huidige streek, 0..1 (voor de groene inktlaag).
   fractionDone() {
     if (this.isDot) return this.active ? 1 : 0;
-    return this.progress / (this.samples.pts.length - 1);
+    const m = this._member();
+    const span = m.to - m.from;
+    if (span <= 0) return 1;
+    return Math.min(1, Math.max(0, (this.progress - m.from) / span));
   }
 
   /* Sterren voor deze letter: beginpunt, richting en bij-de-lijn-blijven
