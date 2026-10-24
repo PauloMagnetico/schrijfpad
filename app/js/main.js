@@ -399,9 +399,10 @@ function screenOefen() {
     terug.onclick = null;
     kop.textContent = 'Kies een woord';
     inhoud.innerHTML = '';
-    const grid = h('<div style="display:flex; flex-wrap:wrap; gap:10px"></div>');
+    // Overzichtelijk raster: alle woordknoppen even groot, zelfde letter.
+    const grid = h('<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px"></div>');
     WOORDEN.forEach((w) => {
-      const b = h(`<button class="card letterfont" style="min-height:56px; padding:0 18px; font-size:24px; border:none; cursor:pointer">${w}</button>`);
+      const b = h(`<button class="card letterfont" style="min-height:60px; padding:0 10px; font-size:22px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center">${w}</button>`);
       b.addEventListener('click', () => toonTypes(w));
       grid.appendChild(b);
     });
