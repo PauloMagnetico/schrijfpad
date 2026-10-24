@@ -20,7 +20,6 @@ const store = {
   progress: {},            // letter -> { stars }
   currentLetter: null,
   anim: null,              // lopende animatie (om te stoppen)
-  autoScan: false,         // vanaf het startscherm: camera meteen openen op #join
 };
 
 function letterList() {
@@ -181,7 +180,7 @@ function screenStart() {
       <a href="#home" id="solo" aria-label="Alleen oefenen" style="min-height:128px; padding:20px; box-sizing:border-box; border-radius:24px; background:var(--primary); color:#fff; text-decoration:none; display:flex; align-items:center; justify-content:center">
         ${personFilled(76, '#fff')}
       </a>
-      <a href="#join" id="joinqr" aria-label="Aansluiten bij een sessie" style="min-height:128px; padding:20px; box-sizing:border-box; border-radius:24px; background:#fff; border:2px solid var(--border); color:var(--ink); text-decoration:none; display:flex; align-items:center; justify-content:center">
+      <a href="#join" aria-label="Aansluiten bij een sessie" style="min-height:128px; padding:20px; box-sizing:border-box; border-radius:24px; background:#fff; border:2px solid var(--border); color:var(--ink); text-decoration:none; display:flex; align-items:center; justify-content:center">
         ${groupFilled(84, '#2357D9', '#fff')}
       </a>
     </div>
@@ -190,8 +189,6 @@ function screenStart() {
     </div>
   </div>`);
   s.querySelector('#solo').addEventListener('click', () => { store.mode = 'solo'; });
-  // Kiest de leerling "aansluiten", dan opent de camera meteen om de QR-code te scannen.
-  s.querySelector('#joinqr').addEventListener('click', () => { store.autoScan = true; });
   return s;
 }
 
@@ -256,8 +253,8 @@ function screenJoin() {
     renderBoxes();
   });
 
-  // QR scannen: alleen als de browser het kan. Komt de leerling via het
-  // startscherm, dan opent de camera vanzelf; de knop blijft voor opnieuw scannen.
+  // QR scannen: alleen als de browser het kan. De camera opent pas wanneer
+  // de leerling zelf voor "Scan de QR-code" kiest.
   const canScan = 'BarcodeDetector' in window && navigator.mediaDevices;
   async function startScan() {
     const video = s.querySelector('#qrvideo');
@@ -303,10 +300,6 @@ function screenJoin() {
     showBoxes();
   }
   if (code) showBoxes();
-  if (store.autoScan) {
-    store.autoScan = false;
-    if (canScan && code.length !== 6) { choose(scanBtn); startScan(); }
-  }
 
   s.querySelector('#solo').addEventListener('click', () => { store.mode = 'solo'; });
   s.querySelector('#go').addEventListener('click', async () => {
