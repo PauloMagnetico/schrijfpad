@@ -1,8 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Schrijfpad: de letter a, overtrokken door een vinger. -->
   <rect width="512" height="512" rx="112" fill="#2357D9"/>
-  <rect x="64" y="236" width="384" height="110" fill="#EEF3FF" opacity="0.25"/>
-  <line x1="64" y1="236" x2="448" y2="236" stroke="#EEF3FF" stroke-width="8" opacity="0.6"/>
-  <line x1="64" y1="346" x2="448" y2="346" stroke="#FFFFFF" stroke-width="10"/>
-  <text x="256" y="346" text-anchor="middle" font-family="Andika, DejaVu Sans, sans-serif" font-size="300" fill="#FFFFFF">a</text>
-  <circle cx="352" cy="190" r="26" fill="#C25E00"/>
+  <g transform="matrix(2.8 0 0 2.8 -234 -206)">
+    <path d="M 197 125.6 C 186.3 120 175.8 120 170.6 120 C 158 120 147.7 124.5 140 134.7 C 134.9 141.5 131 151.5 131 165 C 131 178.9 133.2 188.2 138.3 196.5 C 143.9 205.6 149.8 210 160.8 210 C 169.8 210 179.3 205.3 185.4 196.8 C 191.8 187.9 197 182.9 197 165 L 197 125.6 M 197 125.6 L 197 196.8 C 197 206.1 200.5 210 206.8 210 C 213.4 210 219 201.4 219 201.4" fill="none" stroke="#FFFFFF" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="200" y1="130" x2="238" y2="184" stroke="#2357D9" stroke-width="42" stroke-linecap="round"/>
+    <line x1="200" y1="130" x2="238" y2="184" stroke="#172033" stroke-width="32" stroke-linecap="round"/>
+  </g>
 </svg>

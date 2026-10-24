@@ -1,6 +1,6 @@
 {
-  "name": "Letterpad",
-  "short_name": "Letterpad",
+  "name": "Schrijfpad",
+  "short_name": "Schrijfpad",
   "description": "Leer schrijven in een nieuw alfabet, letter per letter.",
   "lang": "nl",
   "start_url": "/",

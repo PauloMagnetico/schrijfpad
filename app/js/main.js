@@ -1,4 +1,4 @@
-/* Letterpad — schermen en routering. Eén pagina, hash-routes:
+/* Schrijfpad — schermen en routering. Eén pagina, hash-routes:
  * #start #join #home #watch #trace #write #teacher
  */
 
@@ -171,14 +171,22 @@ function groupFilled(size, color, edge) {
   </svg>`;
 }
 
+// Logo: de schrijfletter a, overtrokken door een vinger. Zo eenvoudig mogelijk.
+function logoMarkup(height) {
+  const w = Math.round((height * 176) / 140);
+  return `<svg width="${w}" height="${height}" viewBox="110 98 176 140" aria-hidden="true">
+    <path d="M 197 125.6 C 186.3 120 175.8 120 170.6 120 C 158 120 147.7 124.5 140 134.7 C 134.9 141.5 131 151.5 131 165 C 131 178.9 133.2 188.2 138.3 196.5 C 143.9 205.6 149.8 210 160.8 210 C 169.8 210 179.3 205.3 185.4 196.8 C 191.8 187.9 197 182.9 197 165 L 197 125.6 M 197 125.6 L 197 196.8 C 197 206.1 200.5 210 206.8 210 C 213.4 210 219 201.4 219 201.4" fill="none" stroke="#2357D9" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="200" y1="130" x2="254" y2="206" stroke="#fff" stroke-width="44" stroke-linecap="round"/>
+    <line x1="200" y1="130" x2="254" y2="206" stroke="#172033" stroke-width="32" stroke-linecap="round"/>
+  </svg>`;
+}
+
 function screenStart() {
   const s = h(`<div class="screen">
     <div class="topbar"><span></span></div>
     <div style="padding: 12px 24px 0; display:flex; flex-direction:column; align-items:center; gap:14px; text-align:center">
-      <div class="letterfont" style="display:flex; gap:4px; font-size:64px; line-height:1">
-        <span>a</span><span style="color:#2357D9">b</span><span>c</span>
-      </div>
-      <h1 style="font-size:30px">Letterpad</h1>
+      ${logoMarkup(110)}
+      <h1 style="font-size:30px">Schrijfpad</h1>
       <p style="font-size:17px; color:var(--muted)">Leer schrijven, letter per letter.</p>
     </div>
     <div style="padding:36px 20px 0; display:flex; flex-direction:column; gap:14px">
@@ -999,8 +1007,8 @@ function screenTeacher() {
   const s = h(`<div class="screen wide">
     <header style="background:var(--card); padding:14px 24px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; border-radius:0 0 24px 24px">
       <div style="display:flex; align-items:center; gap:12px">
-        <span class="letterfont" style="font-size:28px; line-height:1; color:var(--primary)">a</span>
-        <span style="font-size:18px; font-weight:700">Letterpad</span>
+        ${logoMarkup(34)}
+        <span style="font-size:18px; font-weight:700">Schrijfpad</span>
         <span style="padding:4px 10px; border-radius:12px; background:var(--orange-bg); color:var(--orange-ink); font-size:14px; font-weight:700">Leerkracht</span>
       </div>
       <nav style="display:flex; align-items:center; gap:8px">
@@ -1276,7 +1284,7 @@ function screenTeacher() {
         <div style="margin-top:4px">${items}</div>
       </div>`;
     }).join('');
-    return `<h1 style="font-size:24px; margin:0 0 4px">Letterpad — resultaten</h1>
+    return `<h1 style="font-size:24px; margin:0 0 4px">Schrijfpad — resultaten</h1>
       <p style="margin:0 0 16px">Sessie ${code} · ${when}</p>
       ${blocks || '<p>Er was niemand aangesloten.</p>'}`;
   }
