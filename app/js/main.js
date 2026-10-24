@@ -1149,8 +1149,8 @@ function screenTeacher() {
           <span id="joined" style="align-self:flex-end; font-size:15px; color:var(--muted)">0 aangesloten</span>
           <div style="overflow-x:auto">
             <div style="min-width:420px; display:flex; flex-direction:column">
-              <div style="display:grid; grid-template-columns:2fr 1.5fr 1fr; gap:12px; padding:8px 12px; font-size:14px; font-weight:700; color:var(--muted)">
-                <span>Leerling</span><span>Bezig met</span><span>Resultaat</span>
+              <div style="display:grid; grid-template-columns:1.8fr 1.4fr 0.9fr 1.1fr; gap:12px; padding:8px 12px; font-size:14px; font-weight:700; color:var(--muted)">
+                <span>Leerling</span><span>Bezig met</span><span>Resultaat</span><span>Moeilijkheden</span>
               </div>
               <div id="rows"></div>
             </div>
@@ -1254,10 +1254,16 @@ function screenTeacher() {
     list.forEach((l, i) => {
       const bg = ['#FDEBD8', '#E6F4EC', '#E8EEFC', '#EEF1F6'][i % 4];
       const klaar = l.step === 'Klaar';
-      rowsEl.appendChild(h(`<div style="display:grid; grid-template-columns:2fr 1.5fr 1fr; gap:12px; align-items:center; padding:10px 12px; border-top:1px solid #E3E8F0; font-size:16px; ${l.connected ? '' : 'opacity:.45'}">
+      // Gemiddelde sterren over de afgeronde letters van deze sessie, en de
+      // letters die moeilijk gingen (0 of 1 ster).
+      const scores = Object.values(l.results || {});
+      const gem = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
+      const moeilijk = Object.entries(l.results || {}).filter(([, st]) => st <= 1).map(([ltr]) => ltr);
+      rowsEl.appendChild(h(`<div style="display:grid; grid-template-columns:1.8fr 1.4fr 0.9fr 1.1fr; gap:12px; align-items:center; padding:10px 12px; border-top:1px solid #E3E8F0; font-size:16px; ${l.connected ? '' : 'opacity:.45'}">
         <span style="display:flex; align-items:center; gap:10px"><span style="width:32px; height:32px; border-radius:16px; background:${bg}; flex-shrink:0"></span>${esc(l.name)}${l.connected ? '' : ' (weg)'}</span>
         <span style="color:${klaar ? 'var(--green-ink)' : 'var(--ink)'}; font-weight:${klaar ? 700 : 400}">${klaar ? 'Klaar ✓' : esc(l.step || '—')}</span>
-        <span style="color:var(--green-ink); font-weight:700">${l.lastStars === undefined ? '–' : '★'.repeat(l.lastStars) + '☆'.repeat(3 - l.lastStars)}</span>
+        <span style="color:var(--green-ink); font-weight:700">${gem === null ? '–' : `${gem.toFixed(1).replace('.', ',')} ★`}</span>
+        <span class="letterfont" style="color:var(--orange-ink)">${moeilijk.length ? esc(moeilijk.join(', ')) : '–'}</span>
       </div>`));
     });
   }
@@ -1304,7 +1310,6 @@ function screenTeacher() {
     if (msg.step === 'Klaar' && msg.letter) {
       l.results = l.results || {};
       l.results[msg.letter] = msg.stars || 0;
-      l.lastStars = msg.stars || 0;
     }
     renderRows();
   });
