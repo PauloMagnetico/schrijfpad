@@ -79,8 +79,8 @@ async function testWriteScreen(letter) {
   const svg = document.querySelector('#canvas');
   const g = document.querySelector('#slot');
   const def = LETTERS[letter];
-  // Zoals een echte leerling: een afgekeurde beurt (1 ster) telt niet mee
-  // en wordt overgedaan; na max 6 beurten geven we op.
+  // Vaste drie beurten: elke beurt telt (goed of niet). De marge tot 6
+  // rondes blijft als vangnet voor het geval de flow ooit verandert.
   for (let round = 0; round < 6 && !window.__lp.progress[letter]; round++) {
     for (const s of def.strokes) await traceStroke(svg, g, s.d);
     await wait(1700); // ghost-overlay + automatische overgang

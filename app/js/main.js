@@ -178,13 +178,11 @@ function screenStart() {
       <p style="font-size:17px; color:var(--muted)">Leer schrijven, letter per letter.</p>
     </div>
     <div style="padding:36px 20px 0; display:flex; flex-direction:column; gap:14px">
-      <a href="#home" id="solo" aria-label="Alleen oefenen" style="min-height:128px; padding:20px; box-sizing:border-box; border-radius:24px; background:var(--primary); color:#fff; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:18px">
-        <span style="width:64px; height:64px; flex-shrink:0; border-radius:18px; background:#fff; display:flex; align-items:center; justify-content:center">${icon('pencil', 34, '#2357D9')}</span>
-        ${personFilled(44, '#fff')}
+      <a href="#home" id="solo" aria-label="Alleen oefenen" style="min-height:128px; padding:20px; box-sizing:border-box; border-radius:24px; background:var(--primary); color:#fff; text-decoration:none; display:flex; align-items:center; justify-content:center">
+        ${personFilled(76, '#fff')}
       </a>
-      <a href="#join" id="joinqr" aria-label="Aansluiten bij een sessie" style="min-height:128px; padding:20px; box-sizing:border-box; border-radius:24px; background:#fff; border:2px solid var(--border); color:var(--ink); text-decoration:none; display:flex; align-items:center; justify-content:center; gap:18px">
-        <span style="width:64px; height:64px; flex-shrink:0; border-radius:18px; background:var(--primary-soft); display:flex; align-items:center; justify-content:center">${icon('qr', 34, '#2357D9')}</span>
-        ${groupFilled(48, '#2357D9', '#fff')}
+      <a href="#join" id="joinqr" aria-label="Aansluiten bij een sessie" style="min-height:128px; padding:20px; box-sizing:border-box; border-radius:24px; background:#fff; border:2px solid var(--border); color:var(--ink); text-decoration:none; display:flex; align-items:center; justify-content:center">
+        ${groupFilled(84, '#2357D9', '#fff')}
       </a>
     </div>
     <div style="margin-top:auto; padding:16px 20px 32px; display:flex; justify-content:center">
@@ -557,8 +555,7 @@ function screenTrace() {
         </g>
       </svg>
     </div>
-    <div class="card" style="margin:16px 20px 0; padding:14px 16px; display:flex; align-items:center; justify-content:space-between">
-      <span style="font-size:15px; color:var(--muted)">Probeer 3 keer</span>
+    <div class="card" style="margin:16px 20px 0; padding:14px 16px; display:flex; align-items:center; justify-content:center">
       <div id="chips" style="display:flex; gap:10px"></div>
     </div>
     <div class="bottombar">
@@ -687,8 +684,7 @@ function screenWrite() {
         <g id="slot" transform="${letterTransform(vbW, def.w, store.slant)}"></g>
       </svg>
     </div>
-    <div class="card" style="margin:16px 20px 0; padding:14px 16px; display:flex; align-items:center; justify-content:space-between">
-      <span style="font-size:15px; color:var(--muted)">Probeer 3 keer</span>
+    <div class="card" style="margin:16px 20px 0; padding:14px 16px; display:flex; align-items:center; justify-content:center">
       <div id="chips" style="display:flex; gap:10px"></div>
     </div>
     <div class="bottombar">
@@ -718,18 +714,18 @@ function screenWrite() {
   }
 
   const chips = s.querySelector('#chips');
-  function updateChips(failedNow) {
+  function updateChips() {
     chips.innerHTML = '';
     for (let i = 0; i < 3; i++) {
-      // De lopende beurt kleurt oranje wanneer hij niet goed genoeg was.
-      const st = i < attempts.length ? 'done' : i === attempts.length ? (failedNow ? 'weak' : 'now') : 'later';
+      // Elke beurt telt: goed wordt groen, niet goed genoeg wordt oranje.
+      const st = attempts[i] !== undefined ? (attempts[i] > 1 ? 'done' : 'weak') : i === attempts.length ? 'now' : 'later';
       const css = {
         done: 'background:var(--green-bg); color:var(--green-ink)',
         weak: 'background:var(--orange-bg); color:var(--orange-ink)',
         now: 'border:2px solid var(--primary); box-sizing:border-box; color:var(--primary); background:#fff',
         later: 'background:var(--neutral); color:var(--muted)',
       }[st];
-      const label = st === 'weak' ? `Keer ${i + 1}: niet goed, probeer opnieuw` : st === 'done' ? `Keer ${i + 1}: goed` : `Keer ${i + 1}`;
+      const label = st === 'weak' ? `Keer ${i + 1}: niet goed` : st === 'done' ? `Keer ${i + 1}: goed` : `Keer ${i + 1}`;
       chips.appendChild(h(`<span class="letterfont" aria-label="${label}" style="width:44px; height:44px; border-radius:12px; ${css}; font-size:${letter.length > 1 ? 20 : 28}px; display:flex; align-items:center; justify-content:center">${letter}</span>`));
     }
   }
@@ -748,22 +744,19 @@ function screenWrite() {
     else { store.currentLetter = null; location.hash = '#home'; }
   }
 
+  // Sterren = het aantal goede (groene) schrijfbeurten.
+  function greenCount() { return attempts.filter((st) => st > 1).length; }
+
   function finishAttempt() {
     const stars = tracer.stars();
     // Even de grijze vorm over de eigen letter: zo zie je zelf hoe het ging.
     slotG.insertAdjacentHTML('beforeend', `<g class="ghost">${strokePaths(letter, (st) => `stroke="#C7CFDD" stroke-width="${st.dot ? 18 : 26}" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"`)}</g>`);
-    if (stars < 2) {
-      // Strenge lat: een slordige letter telt niet mee; het blokje kleurt oranje.
-      updateChips(true);
-      setTimeout(nextAttempt, 1600);
-      return;
-    }
+    // Precies drie beurten: elke beurt telt, ook een mindere (oranje blokje).
     attempts.push(stars);
     updateChips();
     if (attempts.length >= 3) {
-      // Sterren = het aantal groene blokjes bij het afronden van de oefening.
-      store.progress[letter] = { stars: attempts.length };
-      report(letter, 'Klaar', attempts.length);
+      store.progress[letter] = { stars: greenCount() };
+      report(letter, 'Klaar', greenCount());
       // Automatisch door naar de volgende letter; pas terug naar het
       // leerpad wanneer alles af is.
       setTimeout(goNextLetter, 1600);
@@ -776,8 +769,8 @@ function screenWrite() {
   // Wie vroeger stopt, krijgt evenveel sterren als er blokjes groen zijn.
   s.querySelector('#done').addEventListener('click', () => {
     if (!store.progress[letter]) {
-      store.progress[letter] = { stars: attempts.length };
-      report(letter, 'Klaar', attempts.length);
+      store.progress[letter] = { stars: greenCount() };
+      report(letter, 'Klaar', greenCount());
     }
     store.currentLetter = null;
     location.hash = '#home';
