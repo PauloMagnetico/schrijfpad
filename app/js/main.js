@@ -2,7 +2,7 @@
  * #start #join #home #watch #trace #write #teacher
  */
 
-import { LETTERS, WORDS, PATH_ORDER, VOWELS, GUIDES, BOX_H } from './letters.js';
+import { LETTERS, WORDS, PATH_ORDER, WOORDEN, segment, GUIDES, BOX_H } from './letters.js';
 import { Tracer, samplePath, svgPoint, nextHint } from './engine.js';
 import { Session } from './net.js';
 
@@ -834,6 +834,7 @@ function screenWrite() {
 function screenTeacher() {
   const state = {
     picked: ['a'], upper: false, slant: false, lines: 4, help: 'start',
+    kb: 'klank', words: [],   // 'klank' = losse letters/klanken, 'woord' = referentiewoorden
     code: null, learners: new Map(), started: new Date(),
   };
   const ses = new Session();
@@ -882,10 +883,10 @@ function screenTeacher() {
             <h2 style="font-size:19px">Opdracht voor de klas</h2>
             <span id="count" style="font-size:15px; color:var(--muted)"></span>
           </div>
-          <div style="display:flex; flex-wrap:wrap; gap:8px">
-            <button class="chip" data-preset="vowels">Klinkers</button>
-            <button class="chip" data-preset="consonants">Medeklinkers</button>
-            <button class="chip" data-preset="klanken">Klanken</button>
+          <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center">
+            <button class="chip" data-kb="klank">Per klank</button>
+            <button class="chip" data-kb="woord">Per woord</button>
+            <span style="flex-grow:1"></span>
             <button class="chip" data-preset="all">Alles</button>
             <button class="chip" data-preset="none">Wissen</button>
           </div>
@@ -934,8 +935,30 @@ function screenTeacher() {
   const KEYS = [...PATH_ORDER, 'SHIFT'];
   // Hoofdletters bestaan voor losse letters en voor ij (IJ); klanken niet.
   function cs(c) { return state.upper && (c.length === 1 || c === 'ij') ? c.toUpperCase() : c; }
+  // Kiest de lesgever per woord, dan zet een aangeklikt woord vanzelf al
+  // zijn letters en klanken klaar in het letterpad.
+  function pickFromWords() {
+    const out = [];
+    state.words.forEach((w) => segment(w).forEach((l) => { if (!out.includes(l)) out.push(l); }));
+    state.picked = out;
+  }
   function renderKb() {
     kb.innerHTML = '';
+    if (state.kb === 'woord') {
+      const r = document.createElement('div');
+      r.style.cssText = 'display:flex; flex-wrap:wrap; gap:6px';
+      WOORDEN.forEach((w) => {
+        const on = state.words.includes(w);
+        const b = h(`<button class="letterkey" aria-pressed="${on}" style="padding:0 16px; font-size:22px"><span style="display:inline-block; ${state.slant ? 'transform:skewX(-12deg)' : ''}">${w}</span></button>`);
+        b.addEventListener('click', () => {
+          state.words = on ? state.words.filter((x) => x !== w) : [...state.words, w];
+          pickFromWords(); renderKb(); updateCount();
+        });
+        r.appendChild(b);
+      });
+      kb.appendChild(r);
+      return;
+    }
     const r = document.createElement('div');
     r.style.cssText = 'display:grid; grid-template-columns:repeat(10, minmax(0,1fr)); gap:6px';
     KEYS.forEach((c) => {
@@ -961,18 +984,22 @@ function screenTeacher() {
     const n = state.picked.length;
     countEl2.textContent = n === 1 ? '1 gekozen' : `${n} gekozen`;
   }
-  renderKb(); updateCount();
+  function syncKbChips() {
+    s.querySelectorAll('[data-kb]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.kb === state.kb)));
+  }
+  renderKb(); updateCount(); syncKbChips();
 
+  s.querySelectorAll('[data-kb]').forEach((b) => b.addEventListener('click', () => {
+    state.kb = b.dataset.kb;
+    syncKbChips(); renderKb();
+  }));
   s.querySelectorAll('[data-preset]').forEach((b) => b.addEventListener('click', () => {
-    const single = PATH_ORDER.filter((c) => c.length === 1);
-    const map = {
-      vowels: VOWELS.map(cs),
-      consonants: single.filter((c) => !VOWELS.includes(c)).map(cs),
-      klanken: PATH_ORDER.filter((c) => c.length > 1),
-      all: PATH_ORDER.map(cs),
-      none: [],
-    };
-    state.picked = map[b.dataset.preset];
+    if (b.dataset.preset === 'all') {
+      if (state.kb === 'woord') { state.words = [...WOORDEN]; pickFromWords(); }
+      else state.picked = PATH_ORDER.map(cs);
+    } else {
+      state.words = []; state.picked = [];
+    }
     renderKb(); updateCount();
   }));
   function syncOptChips() {

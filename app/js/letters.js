@@ -81,5 +81,20 @@ export const PATH_ORDER = [
 
 export const VOWELS = ['a', 'e', 'i', 'o', 'u'];
 
+// Referentiewoorden, elk één keer, in de aanleervolgorde.
+export const WOORDEN = [...new Set(PATH_ORDER.map((l) => WORDS[l]))];
+
+// Splitst een woord in oefenitems, langste klank eerst: 'school' -> sch, oo, l.
+const BY_LENGTH = [...PATH_ORDER].sort((a, b) => b.length - a.length);
+export function segment(word) {
+  const out = [];
+  let i = 0;
+  while (i < word.length) {
+    const hit = BY_LENGTH.find((it) => word.startsWith(it, i));
+    if (hit) { out.push(hit); i += hit.length; } else i++;
+  }
+  return out;
+}
+
 // Tekengebied: hoogte van het schrijfvak in letter-coördinaten.
 export const BOX_H = 300;

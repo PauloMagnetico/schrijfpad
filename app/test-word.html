@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Test: per woord kiezen (lesgever)</title>
+</head>
+<body>
+<div id="app"></div>
+<div id="printsheet"></div>
+<div id="toast" class="toast"></div>
+<pre id="out"></pre>
+<script type="module">
+import './js/main.js';
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const fails = [];
+
+addEventListener('load', async () => {
+  location.hash = '#teacher';
+  await sleep(600);
+  const q = (sel) => document.querySelector(sel);
+  const chip = (kb) => [...document.querySelectorAll('[data-kb]')].find((b) => b.dataset.kb === kb);
+
+  chip('woord').click();
+  await sleep(50);
+  if (document.querySelectorAll('#kb button').length !== 28) {
+    fails.push(`woordknoppen: ${document.querySelectorAll('#kb button').length}`);
+  }
+  // Elke klik herbouwt het letterpad, dus telkens opnieuw opzoeken.
+  const clickWord = (t) => [...document.querySelectorAll('#kb button')].find((b) => b.textContent.trim() === t).click();
+  clickWord('school');
+  await sleep(50);
+  clickWord('kaas');
+  await sleep(50);
+  if (q('#count').textContent !== '6 gekozen') fails.push(`count: ${q('#count').textContent}`);
+
+  chip('klank').click();
+  await sleep(50);
+  const pressed = [...document.querySelectorAll('#kb button[aria-pressed="true"]')].map((b) => b.textContent.trim());
+  const want = ['sch', 'oo', 'l', 'k', 'aa', 's'];
+  if (!(pressed.length === 6 && want.every((w) => pressed.includes(w)))) fails.push(`aangeduid: ${pressed.join(',')}`);
+
+  // Wissen maakt ook de woordkeuze leeg.
+  [...document.querySelectorAll('[data-preset]')].find((b) => b.dataset.preset === 'none').click();
+  await sleep(50);
+  chip('woord').click();
+  await sleep(50);
+  const stillOn = document.querySelectorAll('#kb button[aria-pressed="true"]').length;
+  if (stillOn !== 0) fails.push(`na wissen nog ${stillOn} woorden aan`);
+
+  q('#out').textContent = JSON.stringify({ fails });
+});
+</script>
+</body>
+</html>
