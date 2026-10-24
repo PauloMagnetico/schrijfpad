@@ -90,7 +90,7 @@ function icon(name, size = 24, color = 'currentColor', sw = 2) {
     zon: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
     blad: '<path d="M5 19C5 10 10 5 20 4c0 10-5 15-14 15z"/><path d="M5 19 13 11"/>',
     ster: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
-    geheugen: '<circle cx="9" cy="9" r="4.3"/><circle cx="9" cy="9" r="1.3"/><path d="M13.3 9h2.4M4.7 9H2.3M11.15 12.72l1.2 2.08M6.85 5.28l-1.2-2.08M11.15 5.28l1.2-2.08M6.85 12.72l-1.2 2.08"/><circle cx="17" cy="17" r="3.1"/><circle cx="17" cy="17" r="1"/><path d="M20.1 17h2.1M13.9 17h-2.1M17 20.1v2.1M17 13.9v-2.1"/>',
+    geheugen: '<path d="M9 22v-3.2C6.6 17.3 5 14.8 5 12a7 7 0 0 1 14 0c0 .9-.2 1.8-.5 2.6l1.5 2.4-2 .6V22"/><g stroke-width="1.4"><circle cx="10" cy="9.6" r="2.2"/><circle cx="10" cy="9.6" r="0.7"/><path d="M12.2 9.6h1.1M7.8 9.6H6.7M11.1 11.5l.55.96M8.9 7.7l-.55-.96M8.9 11.5l-.55.96M11.1 7.7l.55-.96"/><circle cx="14.2" cy="13" r="1.7"/><circle cx="14.2" cy="13" r="0.6"/><path d="M15.4 14.2l.64.64M13 14.2l-.64.64M13 11.8l-.64-.64M15.4 11.8l.64-.64"/></g>',
     maan: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
     bloem: '<circle cx="12" cy="12" r="3"/><path d="M12 9a3 3 0 1 0-3-3 3 3 0 1 0-3 3 3 3 0 1 0 3 3 3 3 0 1 0 3 3 3 3 0 1 0 3-3 3 3 0 1 0 3-3 3 3 0 1 0-3-3 3 3 0 0 0-3 3"/>',
     wolk: '<path d="M17.5 19a4.5 4.5 0 0 0 0-9 6 6 0 0 0-11.5 2A4 4 0 0 0 7 19z"/>',
@@ -173,13 +173,15 @@ function groupFilled(size, color, edge) {
   </svg>`;
 }
 
-// Logo: de schrijfletter a, overtrokken door een hand met wijsvinger. De
-// vingertop raakt het staarteinde van de a, zodat de letter leesbaar blijft.
+// Logo: de schrijfletter a, overtrokken door een schuine hand met
+// wijsvinger. De vingertop raakt precies het staarteinde van de letterlijn.
 function logoMarkup(height) {
-  const w = Math.round((height * 172) / 180);
-  return `<svg width="${w}" height="${height}" viewBox="112 100 172 180" aria-hidden="true">
+  const w = Math.round((height * 176) / 196);
+  return `<svg width="${w}" height="${height}" viewBox="112 100 176 196" aria-hidden="true">
     <path d="M 197 125.6 C 186.3 120 175.8 120 170.6 120 C 158 120 147.7 124.5 140 134.7 C 134.9 141.5 131 151.5 131 165 C 131 178.9 133.2 188.2 138.3 196.5 C 143.9 205.6 149.8 210 160.8 210 C 169.8 210 179.3 205.3 185.4 196.8 C 191.8 187.9 197 182.9 197 165 L 197 125.6 M 197 125.6 L 197 196.8 C 197 206.1 200.5 210 206.8 210 C 213.4 210 219 201.4 219 201.4" fill="none" stroke="#2357D9" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M 210 207 a 9 9 0 0 1 18 0 v 26 c 1 -6 11 -6 12 0 c 1 -6 11 -6 12 0 c 1 -5 9 -5 10 0 v 14 a 20 20 0 0 1 -20 20 h -14 a 22 22 0 0 1 -22 -22 z" fill="#172033" stroke="#fff" stroke-width="7" stroke-linejoin="round" paint-order="stroke"/>
+    <g transform="rotate(32 219 201)">
+      <path d="M 210 210 a 9 9 0 0 1 18 0 v 26 c 1 -6 11 -6 12 0 c 1 -6 11 -6 12 0 c 1 -5 9 -5 10 0 v 14 a 20 20 0 0 1 -20 20 h -14 a 22 22 0 0 1 -22 -22 z" fill="#172033" stroke="#fff" stroke-width="7" stroke-linejoin="round" paint-order="stroke"/>
+    </g>
   </svg>`;
 }
 
@@ -486,6 +488,27 @@ function screenOefen() {
 /* ---------- alleen oefenen: type oefening -------------------------------- */
 // Aparte pagina: het type oefening voor de gekozen woorden. "Letters" is
 // actief; de andere tegels werkt de lesgever hier verder uit.
+// Woord met de opgegeven letters/klanken vet (langste eerst, zodat 'aa'
+// niet door 'a' doorbroken wordt).
+function markeerLetters(woord, letters) {
+  const vet = new Array(woord.length).fill(false);
+  [...letters].sort((a, b) => b.length - a.length).forEach((l) => {
+    let i = woord.indexOf(l);
+    while (i >= 0) {
+      for (let k = i; k < i + l.length; k++) vet[k] = true;
+      i = woord.indexOf(l, i + l.length);
+    }
+  });
+  let uit = '';
+  let open = false;
+  for (let i = 0; i < woord.length; i++) {
+    if (vet[i] && !open) { uit += '<b>'; open = true; }
+    if (!vet[i] && open) { uit += '</b>'; open = false; }
+    uit += esc(woord[i]);
+  }
+  return open ? `${uit}</b>` : uit;
+}
+
 function screenOefenType() {
   const modus = store.oefenModus || 'woorden';
   // Oefenrij: de gekozen letters, of de letters en klanken van alle
@@ -494,7 +517,21 @@ function screenOefenType() {
   if (modus === 'letters') rij.push(...(store.oefenLetters || []));
   else (store.oefenWoorden || []).forEach((w) => segment(w).forEach((l) => { if (!rij.includes(l)) rij.push(l); }));
   if (!rij.length) { location.hash = '#oefen'; return h('<div class="screen"></div>'); }
-  const kopTekst = modus === 'letters' ? rij.join(', ') : (store.oefenWoorden || []).join(', ');
+  // Kop: bij losse letters tonen we hun referentiewoorden met de gekozen
+  // letter(s) vet; bij woorden gewoon de gekozen woorden.
+  let kopHtml;
+  if (modus === 'letters') {
+    const perWoord = [];
+    rij.forEach((l) => {
+      const w = wordFor(l);
+      let e = perWoord.find((x) => x.w === w);
+      if (!e) { e = { w, ls: [] }; perWoord.push(e); }
+      e.ls.push(l);
+    });
+    kopHtml = perWoord.map(({ w, ls }) => markeerLetters(w, ls)).join(', ');
+  } else {
+    kopHtml = esc((store.oefenWoorden || []).join(', '));
+  }
 
   const s = h(`<div class="screen">
     <div class="topbar">
@@ -502,7 +539,7 @@ function screenOefenType() {
       <span style="width:48px"></span>
     </div>
     <div style="padding:8px 20px 0">
-      <h1 style="font-size:24px"><span class="letterfont">${esc(kopTekst)}</span></h1>
+      <h1 style="font-size:24px"><span class="letterfont">${kopHtml}</span></h1>
     </div>
     <div style="padding:18px 20px 24px; display:grid; grid-template-columns:1fr 1fr; gap:14px">
       <button id="leerpad" aria-label="Leerpad met deze letters: kijken, overtrekken en schrijven" class="card" style="min-height:140px; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:12px">
@@ -1062,7 +1099,7 @@ function screenTeacher() {
             <div style="display:flex; flex-direction:column; gap:6px">
               <span style="font-size:15px; color:var(--muted)">Code voor de leerlingen</span>
               <span id="codeview" style="font-size:44px; font-weight:700; letter-spacing:0.08em">··· ···</span>
-              <span style="font-size:14px; color:var(--muted)">letterpad.local → Aansluiten</span>
+              <span style="font-size:14px; color:var(--muted)">schrijfpad.local → Aansluiten</span>
             </div>
           </div>
           <div style="display:flex; flex-wrap:wrap; gap:10px">
@@ -1289,7 +1326,7 @@ function screenTeacher() {
       <div class="letterfont" style="display:flex; gap:4px; font-size:56px"><span>a</span><span style="color:var(--primary)">b</span><span>c</span></div>
       <div style="width:min(44vh,70vw); aspect-ratio:1; background:#fff; border-radius:24px; padding:16px; box-sizing:border-box">${qrHtml}</div>
       <div style="font-size:min(14vw,110px); font-weight:700; letter-spacing:.08em">${pretty}</div>
-      <p style="font-size:22px; color:var(--muted)">Ga naar <strong>letterpad.local</strong> en tik op Aansluiten</p>
+      <p style="font-size:22px; color:var(--muted)">Ga naar <strong>schrijfpad.local</strong> en tik op Aansluiten</p>
       <button class="btn ghost small" id="closeov">Sluiten</button>
     </div>`);
     const qsvg = ov.querySelector('svg');
