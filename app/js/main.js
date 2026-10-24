@@ -292,6 +292,29 @@ function screenJoin() {
       tick();
     } catch { toast('Camera niet beschikbaar'); }
   }
+  // Op een computer telt een getypt cijfer meteen mee, zonder eerst het
+  // cijfervak aan te klikken; het naamveld houdt zijn eigen invoer (na klik).
+  // Enter sluit aan zodra code en naam zijn ingevuld.
+  function globalKeys(ev) {
+    if (!document.body.contains(s)) { removeEventListener('keydown', globalKeys); return; }
+    if (ev.key === 'Enter') { ev.preventDefault(); s.querySelector('#go').click(); return; }
+    const t = ev.target;
+    if (t === input || (t && t.id === 'voornaam')) return;
+    if (/^\d$/.test(ev.key)) {
+      choose(typBtn); showBoxes();
+      code = (code + ev.key).slice(0, 6);
+      input.value = code;
+      renderBoxes();
+      ev.preventDefault();
+    } else if (ev.key === 'Backspace') {
+      code = code.slice(0, -1);
+      input.value = code;
+      renderBoxes();
+      ev.preventDefault();
+    }
+  }
+  addEventListener('keydown', globalKeys);
+
   typBtn.addEventListener('click', () => { choose(typBtn); showBoxes(); input.focus(); });
   if (canScan) {
     scanBtn.style.display = 'flex';
