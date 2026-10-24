@@ -173,12 +173,13 @@ function groupFilled(size, color, edge) {
   </svg>`;
 }
 
-// Logo: de schrijfletter a, overtrokken door een vinger. Zo eenvoudig mogelijk.
+// Logo: de schrijfletter a, overtrokken door een hand met wijsvinger. De
+// vingertop raakt het staarteinde van de a, zodat de letter leesbaar blijft.
 function logoMarkup(height) {
-  const w = Math.round((height * 176) / 140);
-  return `<svg width="${w}" height="${height}" viewBox="110 98 176 140" aria-hidden="true">
+  const w = Math.round((height * 172) / 180);
+  return `<svg width="${w}" height="${height}" viewBox="112 100 172 180" aria-hidden="true">
     <path d="M 197 125.6 C 186.3 120 175.8 120 170.6 120 C 158 120 147.7 124.5 140 134.7 C 134.9 141.5 131 151.5 131 165 C 131 178.9 133.2 188.2 138.3 196.5 C 143.9 205.6 149.8 210 160.8 210 C 169.8 210 179.3 205.3 185.4 196.8 C 191.8 187.9 197 182.9 197 165 L 197 125.6 M 197 125.6 L 197 196.8 C 197 206.1 200.5 210 206.8 210 C 213.4 210 219 201.4 219 201.4" fill="none" stroke="#2357D9" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M 187 127 a 10 10 0 0 1 20 0 v 34 h 26 a 12 12 0 0 1 12 12 v 22 a 24 24 0 0 1 -24 24 h -14 a 20 20 0 0 1 -20 -20 z" fill="#172033" stroke="#fff" stroke-width="8" stroke-linejoin="round" paint-order="stroke"/>
+    <path d="M 210 207 a 9 9 0 0 1 18 0 v 26 c 1 -6 11 -6 12 0 c 1 -6 11 -6 12 0 c 1 -5 9 -5 10 0 v 14 a 20 20 0 0 1 -20 20 h -14 a 22 22 0 0 1 -22 -22 z" fill="#172033" stroke="#fff" stroke-width="7" stroke-linejoin="round" paint-order="stroke"/>
   </svg>`;
 }
 
@@ -506,7 +507,6 @@ function screenOefenType() {
     <div style="padding:18px 20px 24px; display:grid; grid-template-columns:1fr 1fr; gap:14px">
       <button id="leerpad" aria-label="Leerpad met deze letters: kijken, overtrekken en schrijven" class="card" style="min-height:140px; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:12px">
         ${icon('path', 32, 'var(--primary)')}
-        <span class="letterfont" style="font-size:20px; line-height:1.3; color:var(--primary); text-align:center">${rij.join(' ')}</span>
         <span style="font-size:16px; font-weight:700">Leerpad</span>
       </button>
       <button id="geheugen" aria-label="Geheugenoefening: schrijf de letters na elkaar uit het hoofd" class="card" style="min-height:140px; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:12px">
