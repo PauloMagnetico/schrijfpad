@@ -402,7 +402,7 @@ function screenOefen() {
     // Overzichtelijk raster: alle woordknoppen even groot, zelfde letter.
     const grid = h('<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px"></div>');
     WOORDEN.forEach((w) => {
-      const b = h(`<button class="card letterfont" style="min-height:60px; padding:0 10px; font-size:22px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center">${w}</button>`);
+      const b = h(`<button class="card letterfont" style="min-height:60px; padding:0 8px; font-size:min(32px, 8.5vw); line-height:1; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center">${w}</button>`);
       b.addEventListener('click', () => toonTypes(w));
       grid.appendChild(b);
     });
