@@ -90,7 +90,7 @@ function icon(name, size = 24, color = 'currentColor', sw = 2) {
     zon: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
     blad: '<path d="M5 19C5 10 10 5 20 4c0 10-5 15-14 15z"/><path d="M5 19 13 11"/>',
     ster: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
-    geheugen: '<path d="M9 22v-3.2C6.6 17.3 5 14.8 5 12a7 7 0 0 1 14 0c0 .9-.2 1.8-.5 2.6l1.5 2.4-2 .6V22"/><circle cx="12" cy="10.8" r="2.6"/><path d="M10.9 14.6h2.2"/>',
+    geheugen: '<circle cx="9" cy="9" r="4.3"/><circle cx="9" cy="9" r="1.3"/><path d="M13.3 9h2.4M4.7 9H2.3M11.15 12.72l1.2 2.08M6.85 5.28l-1.2-2.08M11.15 5.28l1.2-2.08M6.85 12.72l-1.2 2.08"/><circle cx="17" cy="17" r="3.1"/><circle cx="17" cy="17" r="1"/><path d="M20.1 17h2.1M13.9 17h-2.1M17 20.1v2.1M17 13.9v-2.1"/>',
     maan: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
     bloem: '<circle cx="12" cy="12" r="3"/><path d="M12 9a3 3 0 1 0-3-3 3 3 0 1 0-3 3 3 3 0 1 0 3 3 3 3 0 1 0 3 3 3 3 0 1 0 3-3 3 3 0 1 0 3-3 3 3 0 1 0-3-3 3 3 0 0 0-3 3"/>',
     wolk: '<path d="M17.5 19a4.5 4.5 0 0 0 0-9 6 6 0 0 0-11.5 2A4 4 0 0 0 7 19z"/>',
@@ -506,11 +506,11 @@ function screenOefenType() {
     </div>
     <div style="padding:18px 20px 24px; display:grid; grid-template-columns:1fr 1fr; gap:14px">
       <button id="leerpad" aria-label="Leerpad met deze letters: kijken, overtrekken en schrijven" class="card" style="min-height:140px; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:12px">
-        ${icon('path', 32, 'var(--primary)')}
+        ${icon('path', 56, 'var(--primary)')}
         <span style="font-size:16px; font-weight:700">Leerpad</span>
       </button>
       <button id="geheugen" aria-label="Geheugenoefening: schrijf de letters na elkaar uit het hoofd" class="card" style="min-height:140px; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:12px">
-        ${icon('geheugen', 32, 'var(--orange)')}
+        ${icon('geheugen', 56, 'var(--orange)')}
         <span style="font-size:16px; font-weight:700">Geheugen</span>
       </button>
       <div aria-label="Meer oefeningen volgen nog" style="min-height:140px; border-radius:24px; border:2px dashed var(--border); display:flex; align-items:center; justify-content:center; color:var(--line); font-size:40px">+</div>
