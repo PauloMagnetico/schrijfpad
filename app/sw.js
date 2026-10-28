@@ -1,7 +1,7 @@
-/* Letterpad service worker: de app-schil werkt offline.
+/* Schrijfpad service worker: de app-schil werkt offline.
  * Sessies (WebSocket) hebben uiteraard wel het netwerk nodig.
  */
-const VERSION = 'letterpad-v5';
+const VERSION = 'schrijfpad-v6';
 const SHELL = [
   './',
   './index.html',

@@ -1,4 +1,4 @@
-/* Letterpad — verbinding met de sessieserver (WebSocket).
+/* Schrijfpad — verbinding met de sessieserver (WebSocket).
  * Fase 1: sessies zonder geheugen. De server bewaart niets; valt de
  * verbinding weg, dan proberen we opnieuw aan te sluiten met dezelfde code.
  */

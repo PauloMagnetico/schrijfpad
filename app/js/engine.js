@@ -1,4 +1,4 @@
-/* Letterpad — teken- en beoordelingsmotor.
+/* Schrijfpad — teken- en beoordelingsmotor.
  * Bemonstert streekpaden tot polylijnen en beoordeelt wat de leerder tekent:
  * beginpunt, richting en volgorde tellen, de vorm mag ruim afwijken.
  */

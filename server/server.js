@@ -1,4 +1,4 @@
-/* Letterpad sessieserver — fase 1: sessies zonder geheugen.
+/* Schrijfpad sessieserver — fase 1: sessies zonder geheugen.
  * Serveert de statische app en relayeert sessieverkeer via WebSocket.
  * Alles leeft in het geheugen van dit proces; er is geen database en
  * bij het stoppen van een sessie (of de server) is alles weg.
@@ -178,4 +178,4 @@ wss.on('connection', (ws) => {
   });
 });
 
-server.listen(PORT, () => console.log(`letterpad op :${PORT}`));
+server.listen(PORT, () => console.log(`schrijfpad op :${PORT}`));

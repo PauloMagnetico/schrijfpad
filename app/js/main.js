@@ -612,7 +612,7 @@ function screenHome() {
     </div>
     <div id="list" style="flex-grow:1; padding:4px 20px 16px; display:flex; flex-direction:column; gap:10px"></div>
     <nav class="navbar" style="grid-template-columns:repeat(2, minmax(0,1fr))">
-      <a href="#home" class="current">${icon('path')} Letterpad</a>
+      <a href="#home" class="current">${icon('path')} Schrijfpad</a>
       <button id="navwords" style="opacity:.45">${icon('pencil')} Woorden</button>
     </nav>
   </div>`);
@@ -1166,7 +1166,7 @@ function screenTeacher() {
   // Hoofdletters bestaan voor losse letters en voor ij (IJ); klanken niet.
   function cs(c) { return state.upper && (c.length === 1 || c === 'ij') ? c.toUpperCase() : c; }
   // Kiest de lesgever per woord, dan zet een aangeklikt woord vanzelf al
-  // zijn letters en klanken klaar in het letterpad.
+  // zijn letters en klanken klaar in het leerpad.
   function pickFromWords() {
     const out = [];
     state.words.forEach((w) => segment(w).forEach((l) => { if (!out.includes(l)) out.push(l); }));

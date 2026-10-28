@@ -1,7 +1,7 @@
 services:
-  letterpad:
+  schrijfpad:
     build: .
-    container_name: letterpad
+    container_name: schrijfpad
     restart: unless-stopped
     # Ook rechtstreeks op de host bereikbaar (debug): http://WerkBak:8083
     ports:

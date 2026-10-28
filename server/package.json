@@ -1,8 +1,8 @@
 {
-  "name": "letterpad-server",
+  "name": "schrijfpad-server",
   "version": "0.1.0",
   "private": true,
-  "description": "Letterpad: statische app + sessierelais (fase 1, zonder geheugen)",
+  "description": "Schrijfpad: statische app + sessierelais (fase 1, zonder geheugen)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

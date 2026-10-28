@@ -1,4 +1,4 @@
-/* Letterpad — letterdata.
+/* Schrijfpad — letterdata.
  *
  * Coördinatenstelsel (y naar beneden), gedeeld door alle letters:
  *   ASC  =  50  bovenlijn (stokletters, hoofdletters)

@@ -26,7 +26,7 @@ addEventListener('load', async () => {
   if (document.querySelectorAll('#kb button').length !== 28) {
     fails.push(`woordknoppen: ${document.querySelectorAll('#kb button').length}`);
   }
-  // Elke klik herbouwt het letterpad, dus telkens opnieuw opzoeken.
+  // Elke klik herbouwt het lesgeverstoetsenbord, dus telkens opnieuw opzoeken.
   const clickWord = (t) => [...document.querySelectorAll('#kb button')].find((b) => b.textContent.trim() === t).click();
   clickWord('school');
   await sleep(50);

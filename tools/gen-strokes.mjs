@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* Zet de Loblosch-schrijftrajecten (lopend blokschrift, syboor.eu) om naar
- * Letterpad-streekdata.
+ * Schrijfpad-streekdata.
  *
  * Bron: tools/loblosch-anim/<letter>.svg (kleine letters en ij) en
  * U_<LETTER>.svg (hoofdletters en IJ) — de animatiepagina's van
@@ -9,7 +9,7 @@
  * een puntje (i, j, ij), paden met id "overlap-…" zijn decor en vervallen.
  *
  * Animatiestelsel (y omhoog, hartlijnen van de streken): grondlijn 30,
- * romplijn 398, stok-top 684, staart-onderkant −256. Letterpad (y omlaag):
+ * romplijn 398, stok-top 684, staart-onderkant −256. Schrijfpad (y omlaag):
  * BL 210, XH 120, ASC 50, DSC 270. De romp schaalt exact (90/368); de
  * stok- en staartzone krijgen hun eigen factor zodat de hartlijnen precies
  * op onze liniatuur landen (staarten daardoor ~15% gedrongener dan in het
@@ -27,7 +27,7 @@ const OUT = join(HERE, '..', 'app', 'js', 'strokes.js');
 
 const BLA = 30, XTA = 398, ASCA = 684, DSCA = -256; // referenties in de animatie
 const S = 90 / (XTA - BLA);  // rompfactor, ook voor x
-const BEARING = 8;           // linker/rechter zijruimte in letterpad-eenheden
+const BEARING = 8;           // linker/rechter zijruimte in schrijfpad-eenheden
 
 const fx = (n) => Math.round(n * 10) / 10;
 function mapY(y) {
@@ -96,7 +96,7 @@ function strokesFromSvg(text, name) {
 }
 
 function convertLetter(strokes) {
-  // Inktgrens in x over alle streken, dan naar letterpad-stelsel.
+  // Inktgrens in x over alle streken, dan naar schrijfpad-stelsel.
   let minX = Infinity, maxX = -Infinity;
   for (const st of strokes) for (const seg of st.segs) for (const [x] of seg.pts) {
     if (x < minX) minX = x;
@@ -136,7 +136,7 @@ const show = (obj) => Object.entries(obj).map(([k, v]) => {
 
 writeFileSync(OUT, `/* GEGENEREERD door tools/gen-strokes.mjs — niet met de hand bewerken.
  * Schrijftrajecten naar het lopend blokschrift (Loblosch, syboor.eu),
- * geschaald naar het Letterpad-stelsel (romp 120–210, staart tot 270).
+ * geschaald naar het Schrijfpad-stelsel (romp 120–210, staart tot 270).
  * Elke streek loopt in schrijfrichting; dot:true is een tik-puntje.
  */
 
