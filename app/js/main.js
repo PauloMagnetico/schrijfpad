@@ -1282,7 +1282,7 @@ function screenTeacher() {
     s.querySelector('#codeview').textContent = pretty;
     s.querySelector('#started').textContent = `Gestart om ${state.started.getHours()}:${String(state.started.getMinutes()).padStart(2, '0')}`;
     setStatus(true, 'Sessie loopt');
-    const url = `${location.origin}/?s=${msg.code}`;
+    const url = `${location.origin}${location.pathname}?s=${msg.code}`;
     const qr = window.qrcode(0, 'M');
     qr.addData(url);
     qr.make();

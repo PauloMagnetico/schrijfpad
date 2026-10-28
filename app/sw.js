@@ -1,23 +1,23 @@
 /* Letterpad service worker: de app-schil werkt offline.
  * Sessies (WebSocket) hebben uiteraard wel het netwerk nodig.
  */
-const VERSION = 'letterpad-v4';
+const VERSION = 'letterpad-v5';
 const SHELL = [
-  '/',
-  '/index.html',
-  '/css/style.css',
-  '/js/main.js',
-  '/js/letters.js',
-  '/js/strokes.js',
-  '/js/engine.js',
-  '/js/net.js',
-  '/js/vendor-qrcode.js',
-  '/fonts/andika-400.woff2',
-  '/fonts/andika-700.woff2',
-  '/fonts/atkinson-hyperlegible-400.woff2',
-  '/fonts/atkinson-hyperlegible-700.woff2',
-  '/manifest.webmanifest',
-  '/icons/icon.svg',
+  './',
+  './index.html',
+  './css/style.css',
+  './js/main.js',
+  './js/letters.js',
+  './js/strokes.js',
+  './js/engine.js',
+  './js/net.js',
+  './js/vendor-qrcode.js',
+  './fonts/andika-400.woff2',
+  './fonts/andika-700.woff2',
+  './fonts/atkinson-hyperlegible-400.woff2',
+  './fonts/atkinson-hyperlegible-700.woff2',
+  './manifest.webmanifest',
+  './icons/icon.svg',
 ];
 
 self.addEventListener('install', (e) => {

@@ -3,7 +3,7 @@
   "short_name": "Schrijfpad",
   "description": "Leer schrijven in een nieuw alfabet, letter per letter.",
   "lang": "nl",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#F4F6FA",
   "theme_color": "#F4F6FA",
