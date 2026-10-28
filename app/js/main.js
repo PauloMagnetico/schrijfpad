@@ -590,14 +590,11 @@ function screenHome() {
 
   const s = h(`<div class="screen">
     <div class="topbar" style="padding:20px 20px 12px">
-      <div style="display:flex; align-items:center; gap:12px">
-        ${inSession ? '' : `<a class="iconbtn" href="#oefen" aria-label="Terug naar de oefeningen">${icon('back')}</a>`}
-        <div style="display:flex; flex-direction:column">
-          <span style="font-size:20px; font-weight:700">${title}</span>
-          <span style="font-size:14px; color:${inSession ? 'var(--green-ink)' : 'var(--muted)'}; display:flex; align-items:center; gap:4px">${sub}</span>
-        </div>
+      <a class="iconbtn" href="${inSession ? '#start' : '#oefentype'}" aria-label="${inSession ? 'Terug naar het startscherm' : 'Terug naar de typekeuze'}">${icon('back')}</a>
+      <div style="display:flex; flex-direction:column; align-items:flex-end; text-align:right">
+        <span style="font-size:20px; font-weight:700">${title}</span>
+        <span style="font-size:14px; color:${inSession ? 'var(--green-ink)' : 'var(--muted)'}; display:flex; align-items:center; gap:4px">${sub}</span>
       </div>
-      <span id="spk"></span>
     </div>
     ${current ? `<div style="margin:8px 20px 0; padding:22px; border-radius:24px; background:var(--primary); color:#fff; display:flex; align-items:center; gap:18px">
       <div class="letterfont" style="width:96px; height:96px; flex-shrink:0; border-radius:20px; background:#fff; color:var(--ink); font-size:${current.length > 1 ? 48 : 72}px; line-height:1; display:flex; align-items:center; justify-content:center">${current}</div>
@@ -852,8 +849,8 @@ function screenTrace() {
     updateInk();
   }
 
-  function finishAttempt() {
-    const stars = tracer.stars();
+  function finishAttempt(forced) {
+    const stars = forced || tracer.stars();
     attempts.push(stars);
     updateChips();
     unlockNext();
@@ -885,7 +882,8 @@ function screenTrace() {
     const r = tracer.endStroke();
     if (r === 'done-letter') { updateInk(); finishAttempt(); }
     else if (r === 'done-stroke') { updateInk(); }
-    else { tracer.progress = 0; updateInk(); }
+    // Vinger opgetild midden in een beweging: deze beurt is niet goed.
+    else { updateInk(); finishAttempt(1); }
   });
 
   report(letter, `Overtrekken · ${letter}`);
@@ -989,8 +987,8 @@ function screenWrite() {
   // Sterren = het aantal goede (groene) schrijfbeurten.
   function greenCount() { return attempts.filter((st) => st > 1).length; }
 
-  function finishAttempt() {
-    const stars = tracer.stars();
+  function finishAttempt(forced) {
+    const stars = forced || tracer.stars();
     // Even de grijze vorm over de eigen letter: zo zie je zelf hoe het ging.
     slotG.insertAdjacentHTML('beforeend', `<g class="ghost">${strokePaths(letter, (st) => `stroke="#C7CFDD" stroke-width="${st.dot ? 18 : 26}" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"`)}</g>`);
     // Precies drie beurten: elke beurt telt, ook een mindere (oranje blokje).
@@ -1049,10 +1047,8 @@ function screenWrite() {
     const r = tracer.endStroke();
     if (r === 'done-letter') finishAttempt();
     else if (r === 'done-stroke') renderSlot();
-    else {
-      rawInk.pop();
-      updateRawInk();
-    }
+    // Vinger opgetild midden in een beweging: deze beurt is niet goed.
+    else finishAttempt(1);
   });
 
   renderSlot();
